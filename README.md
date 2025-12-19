@@ -1,6 +1,4 @@
-<div align="center">
-  <img src="https://raw.githubusercontent.com/datateamsix/schema-mapper/main/images/sm-logo.png" alt="Schema Mapper Logo" width="200"/>
-</div>
+<img src="https://raw.githubusercontent.com/datateamsix/schema-mapper/main/images/sm-logo.png" alt="Schema Mapper Logo" width="200"/>
 
 # schema-mapper
 
