@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>schema-mapper - Universal Database Schema Mapping</title>
+    <meta name="description" content="Automatically generate schemas, DDL statements, and prepare your data for BigQuery, Snowflake, Redshift, SQL Server, and PostgreSQL">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&family=Source+Code+Pro:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <img src="images/sm-logo.png" alt="Schema Mapper" class="nav-logo">
+                <span class="nav-title">schema-mapper</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#installation">Installation</a></li>
+                <li><a href="#quickstart">Quick Start</a></li>
+                <li><a href="#documentation">Documentation</a></li>
+                <li><a href="https://github.com/yourusername/schema-mapper" class="btn-github">GitHub</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <img src="images/sm-logo.png" alt="Schema Mapper Logo" class="hero-logo">
+                <h1>Universal Database Schema Mapper</h1>
+                <p class="hero-subtitle">Automatically generate schemas, DDL statements, and prepare your data for loading into any major database platform</p>
+                <div class="hero-badges">
+                    <img src="https://badge.fury.io/py/schema-mapper.svg" alt="PyPI version">
+                    <img src="https://img.shields.io/pypi/pyversions/schema-mapper.svg" alt="Python Support">
+                    <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License">
+                </div>
+                <div class="hero-buttons">
+                    <a href="#installation" class="btn btn-primary">Get Started</a>
+                    <a href="https://github.com/yourusername/schema-mapper" class="btn btn-secondary">View on GitHub</a>
+                </div>
+                <div class="platform-icons">
+                    <span class="platform-badge">BigQuery</span>
+                    <span class="platform-badge">Snowflake</span>
+                    <span class="platform-badge">Redshift</span>
+                    <span class="platform-badge">SQL Server</span>
+                    <span class="platform-badge">PostgreSQL</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <h2 class="section-title">Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>5 Platform Support</h3>
+                    <p>BigQuery, Snowflake, Redshift, SQL Server, and PostgreSQL - all from a single API</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <h3>Automatic Type Detection</h3>
+                    <p>Intelligently converts strings to dates, numbers, and booleans automatically</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔧</div>
+                    <h3>Column Standardization</h3>
+                    <p>Cleans messy column names for database compatibility across platforms</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">✅</div>
+                    <h3>Data Validation</h3>
+                    <p>Pre-load validation to catch errors early and ensure data quality</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📋</div>
+                    <h3>Schema Generation</h3>
+                    <p>JSON and DDL formats ready for CLI or API usage with any platform</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🚀</div>
+                    <h3>Table Optimization</h3>
+                    <p>Clustering, partitioning, and distribution strategies for optimal performance</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture Section -->
+    <section class="architecture">
+        <div class="container">
+            <h2 class="section-title">Architecture</h2>
+            <p class="section-subtitle">Canonical schema approach: infer once, render to any platform</p>
+            <div class="architecture-diagrams">
+                <img src="images/schema-mapper-architecture.png" alt="Schema Mapper Architecture" class="diagram">
+                <img src="images/canonical-schema.png" alt="Canonical Schema Flow" class="diagram">
+            </div>
+        </div>
+    </section>
+
+    <!-- Installation Section -->
+    <section id="installation" class="installation">
+        <div class="container">
+            <h2 class="section-title">Installation</h2>
+            <div class="install-grid">
+                <div class="install-card">
+                    <h3>Basic Installation</h3>
+                    <pre><code>pip install schema-mapper</code></pre>
+                </div>
+                <div class="install-card">
+                    <h3>Platform-Specific</h3>
+                    <pre><code>pip install schema-mapper[bigquery]
+pip install schema-mapper[snowflake]
+pip install schema-mapper[redshift]
+pip install schema-mapper[sqlserver]
+pip install schema-mapper[postgresql]</code></pre>
+                </div>
+                <div class="install-card">
+                    <h3>All Platforms</h3>
+                    <pre><code>pip install schema-mapper[all]</code></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Start Section -->
+    <section id="quickstart" class="quickstart">
+        <div class="container">
+            <h2 class="section-title">Quick Start</h2>
+            <div class="code-example">
+                <div class="code-header">
+                    <span class="code-lang">Python</span>
+                </div>
+                <pre><code class="language-python">from schema_mapper import prepare_for_load
+import pandas as pd
+
+# Load your messy data
+df = pd.read_csv('messy_data.csv')
+
+# Prepare for ANY platform in one line!
+df_clean, schema, issues = prepare_for_load(
+    df,
+    target_type='bigquery',  # or 'snowflake', 'redshift', 'sqlserver', 'postgresql'
+)
+
+# Check for issues
+if not issues['errors']:
+    print(f"✅ {len(schema)} columns prepared and ready to load!")
+else:
+    print("❌ Fix these errors:", issues['errors'])</code></pre>
+            </div>
+
+            <h3 class="subsection-title">Generate Optimized DDL with Clustering & Partitioning</h3>
+            <div class="code-example">
+                <div class="code-header">
+                    <span class="code-lang">Python</span>
+                </div>
+                <pre><code class="language-python">from schema_mapper.generators_enhanced import get_enhanced_ddl_generator
+from schema_mapper.ddl_mappings import DDLOptions, ClusteringConfig, PartitionConfig, PartitionType
+import pandas as pd
+
+df = pd.read_csv('events.csv')
+
+# BigQuery: Partitioned by date, clustered by user_id
+generator = get_enhanced_ddl_generator('bigquery')
+options = DDLOptions(
+    partitioning=PartitionConfig(
+        column='event_date',
+        partition_type=PartitionType.TIME,
+        expiration_days=365
+    ),
+    clustering=ClusteringConfig(columns=['user_id', 'event_type'])
+)
+
+# Generate schema first
+mapper = SchemaMapper('bigquery')
+schema, _ = mapper.generate_schema(df)
+
+# Generate optimized DDL
+ddl = generator.generate(
+    schema=schema,
+    table_name='events',
+    dataset_name='analytics',
+    project_id='my-project',
+    ddl_options=options
+)</code></pre>
+            </div>
+        </div>
+    </section>
+
+    <!-- Platform Comparison Section -->
+    <section class="platform-comparison">
+        <div class="container">
+            <h2 class="section-title">Platform Capabilities</h2>
+            <div class="table-responsive">
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Feature</th>
+                            <th>BigQuery</th>
+                            <th>Snowflake</th>
+                            <th>Redshift</th>
+                            <th>SQL Server</th>
+                            <th>PostgreSQL</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Partitioning</strong></td>
+                            <td><span class="supported">✅ DATE/TIMESTAMP/RANGE</span></td>
+                            <td><span class="partial">⚠️ Auto Micro</span></td>
+                            <td><span class="not-supported">❌</span></td>
+                            <td><span class="supported">✅ Function+Scheme</span></td>
+                            <td><span class="supported">✅ RANGE/LIST/HASH</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Clustering</strong></td>
+                            <td><span class="supported">✅ Up to 4 cols</span></td>
+                            <td><span class="supported">✅ Up to 4 cols</span></td>
+                            <td><span class="not-supported">❌</span></td>
+                            <td><span class="supported">✅ Clustered Index</span></td>
+                            <td><span class="partial">⚠️ Via Indexes</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Distribution</strong></td>
+                            <td><span class="not-supported">❌</span></td>
+                            <td><span class="not-supported">❌</span></td>
+                            <td><span class="supported">✅ KEY/ALL/EVEN/AUTO</span></td>
+                            <td><span class="not-supported">❌</span></td>
+                            <td><span class="not-supported">❌</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sort Keys</strong></td>
+                            <td><span class="not-supported">❌</span></td>
+                            <td><span class="not-supported">❌</span></td>
+                            <td><span class="supported">✅ Compound/Interleaved</span></td>
+                            <td><span class="not-supported">❌</span></td>
+                            <td><span class="not-supported">❌</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Documentation Section -->
+    <section id="documentation" class="documentation">
+        <div class="container">
+            <h2 class="section-title">Documentation</h2>
+            <div class="docs-grid">
+                <div class="doc-card">
+                    <h3>📚 API Reference</h3>
+                    <p>Complete API documentation for SchemaMapper, prepare_for_load(), and all helper functions</p>
+                    <a href="#" class="doc-link">Read More →</a>
+                </div>
+                <div class="doc-card">
+                    <h3>🎨 Type Mapping Guide</h3>
+                    <p>Comprehensive guide to type conversions across all supported platforms</p>
+                    <a href="#" class="doc-link">Read More →</a>
+                </div>
+                <div class="doc-card">
+                    <h3>💡 Example Scripts</h3>
+                    <p>Real-world examples: basic usage, multi-platform, production pipelines, and optimization</p>
+                    <a href="#" class="doc-link">View Examples →</a>
+                </div>
+                <div class="doc-card">
+                    <h3>🏗️ Architecture Guide</h3>
+                    <p>Deep dive into the canonical schema architecture and renderer pattern</p>
+                    <a href="#" class="doc-link">Read More →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Use Cases Section -->
+    <section class="use-cases">
+        <div class="container">
+            <h2 class="section-title">Use Cases</h2>
+            <div class="use-case-grid">
+                <div class="use-case-card">
+                    <h3>🔄 Multi-Cloud Migrations</h3>
+                    <p>Move data seamlessly between cloud providers without manual schema translation</p>
+                </div>
+                <div class="use-case-card">
+                    <h3>📊 Analytics Pipelines</h3>
+                    <p>Automate schema generation for data ingestion into your analytics warehouse</p>
+                </div>
+                <div class="use-case-card">
+                    <h3>🧹 Data Cleaning</h3>
+                    <p>Standardize messy CSV exports and validate data quality before loading</p>
+                </div>
+                <div class="use-case-card">
+                    <h3>🚀 Rapid Prototyping</h3>
+                    <p>Quickly test data across multiple platforms to find the best fit</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>schema-mapper</h4>
+                    <p>Universal database schema mapping for modern data engineering</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="https://github.com/yourusername/schema-mapper">GitHub</a></li>
+                        <li><a href="https://pypi.org/project/schema-mapper/">PyPI</a></li>
+                        <li><a href="#">Documentation</a></li>
+                        <li><a href="#">Examples</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Platforms</h4>
+                    <ul>
+                        <li><a href="#">BigQuery</a></li>
+                        <li><a href="#">Snowflake</a></li>
+                        <li><a href="#">Redshift</a></li>
+                        <li><a href="#">SQL Server</a></li>
+                        <li><a href="#">PostgreSQL</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Community</h4>
+                    <ul>
+                        <li><a href="#">Contributing</a></li>
+                        <li><a href="#">Issues</a></li>
+                        <li><a href="#">Discussions</a></li>
+                        <li><a href="#">License (MIT)</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 schema-mapper. Built with ❤️ for data engineers working across multiple cloud platforms.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

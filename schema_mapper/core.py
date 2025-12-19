@@ -1,0 +1,243 @@
+"""
+Core SchemaMapper class for database schema generation.
+
+This module provides the main SchemaMapper class that coordinates
+all schema mapping operations.
+"""
+
+import pandas as pd
+import json
+from typing import Dict, List, Tuple, Optional
+import logging
+
+from .type_mappings import get_type_mapping, SUPPORTED_PLATFORMS
+from .validators import DataFrameValidator
+from .generators import get_ddl_generator
+from .utils import (
+    standardize_column_name,
+    detect_and_cast_types,
+    infer_column_mode,
+    get_column_description,
+    prepare_dataframe_for_load
+)
+
+logger = logging.getLogger(__name__)
+
+
+class SchemaMapper:
+    """
+    Automated schema generation and data standardization for multiple platforms.
+    
+    Supports: BigQuery, Snowflake, Redshift, SQL Server, PostgreSQL
+    
+    Example:
+        >>> from schema_mapper import SchemaMapper
+        >>> import pandas as pd
+        >>> 
+        >>> df = pd.DataFrame({'id': [1, 2], 'name': ['Alice', 'Bob']})
+        >>> mapper = SchemaMapper('bigquery')
+        >>> schema, _ = mapper.generate_schema(df)
+        >>> print(schema)
+    """
+    
+    def __init__(self, target_type: str = 'bigquery'):
+        """
+        Initialize the SchemaMapper.
+        
+        Args:
+            target_type: Target platform ('bigquery', 'snowflake', 'redshift', 
+                        'sqlserver', 'postgresql')
+                        
+        Raises:
+            ValueError: If target_type is not supported
+        """
+        self.target_type = target_type.lower()
+        self.type_map = get_type_mapping(self.target_type)
+        self.ddl_generator = get_ddl_generator(self.target_type)
+        logger.info(f"Initialized SchemaMapper for {self.target_type}")
+    
+    def generate_schema(
+        self,
+        df: pd.DataFrame,
+        standardize_columns: bool = True,
+        auto_cast: bool = True,
+        include_descriptions: bool = False
+    ) -> Tuple[List[Dict], Dict[str, str]]:
+        """
+        Generate schema for target platform from DataFrame.
+        
+        Args:
+            df: Input DataFrame
+            standardize_columns: Whether to standardize column names
+            auto_cast: Whether to automatically detect and cast types
+            include_descriptions: Whether to include column descriptions
+            
+        Returns:
+            Tuple of (schema list, column_mapping dict)
+            
+        Example:
+            >>> mapper = SchemaMapper('bigquery')
+            >>> schema, mapping = mapper.generate_schema(df)
+            >>> print(mapping)  # {'User ID': 'user_id', ...}
+        """
+        logger.info(f"Generating schema for {len(df.columns)} columns")
+        
+        df_processed = df.copy()
+        
+        if auto_cast:
+            logger.debug("Auto-casting types...")
+            df_processed = detect_and_cast_types(df_processed)
+        
+        schema = []
+        column_mapping = {}
+        
+        for original_col in df_processed.columns:
+            # Standardize column name if requested
+            if standardize_columns:
+                new_col = standardize_column_name(original_col)
+                column_mapping[original_col] = new_col
+            else:
+                new_col = original_col
+            
+            # Get pandas dtype and map to target type
+            dtype_str = str(df_processed[original_col].dtype)
+            target_type = self.type_map.get(dtype_str, self.type_map.get('object', 'STRING'))
+            
+            # Build schema field
+            field = {
+                'name': new_col,
+                'type': target_type,
+                'mode': infer_column_mode(df_processed[original_col])
+            }
+            
+            if include_descriptions:
+                field['description'] = get_column_description(df_processed[original_col])
+            
+            schema.append(field)
+        
+        logger.info(f"Generated schema with {len(schema)} fields")
+        return schema, column_mapping
+    
+    def prepare_dataframe(
+        self,
+        df: pd.DataFrame,
+        standardize_columns: bool = True,
+        auto_cast: bool = True,
+        handle_nulls: bool = True
+    ) -> pd.DataFrame:
+        """
+        Prepare DataFrame for loading into target platform.
+        
+        Args:
+            df: Input DataFrame
+            standardize_columns: Whether to standardize column names
+            auto_cast: Whether to automatically detect and cast types
+            handle_nulls: Whether to handle null values appropriately
+            
+        Returns:
+            Prepared DataFrame
+            
+        Example:
+            >>> mapper = SchemaMapper('bigquery')
+            >>> df_clean = mapper.prepare_dataframe(df)
+        """
+        logger.info("Preparing DataFrame for loading")
+        return prepare_dataframe_for_load(df, standardize_columns, auto_cast, handle_nulls)
+    
+    def validate_dataframe(
+        self,
+        df: pd.DataFrame,
+        high_null_threshold: float = 95.0
+    ) -> Dict[str, List[str]]:
+        """
+        Validate DataFrame for common issues before loading.
+        
+        Args:
+            df: Input DataFrame
+            high_null_threshold: Percentage threshold for high NULL warning
+            
+        Returns:
+            Dictionary with 'errors' and 'warnings' keys
+            
+        Example:
+            >>> mapper = SchemaMapper('bigquery')
+            >>> issues = mapper.validate_dataframe(df)
+            >>> if issues['errors']:
+            ...     print("Fix these:", issues['errors'])
+        """
+        logger.info("Validating DataFrame")
+        validator = DataFrameValidator(high_null_threshold)
+        result = validator.validate(df)
+        return result.to_dict()
+    
+    def generate_ddl(
+        self,
+        df: pd.DataFrame,
+        table_name: str,
+        dataset_name: Optional[str] = None,
+        project_id: Optional[str] = None,
+        **kwargs
+    ) -> str:
+        """
+        Generate CREATE TABLE DDL statement for target platform.
+        
+        Args:
+            df: Input DataFrame
+            table_name: Table name
+            dataset_name: Dataset/schema/database name
+            project_id: Project ID (BigQuery only)
+            **kwargs: Additional arguments passed to generate_schema
+            
+        Returns:
+            DDL statement
+            
+        Example:
+            >>> mapper = SchemaMapper('bigquery')
+            >>> ddl = mapper.generate_ddl(df, 'users', 'analytics', 'my-project')
+            >>> print(ddl)
+        """
+        logger.info(f"Generating DDL for table {table_name}")
+        schema, _ = self.generate_schema(df, **kwargs)
+        return self.ddl_generator.generate(schema, table_name, dataset_name, project_id)
+    
+    def generate_bigquery_schema_json(self, df: pd.DataFrame, **kwargs) -> str:
+        """
+        Generate BigQuery schema in JSON format (for bq CLI or API).
+        
+        Args:
+            df: Input DataFrame
+            **kwargs: Additional arguments passed to generate_schema
+            
+        Returns:
+            JSON string of schema
+            
+        Example:
+            >>> mapper = SchemaMapper('bigquery')
+            >>> schema_json = mapper.generate_bigquery_schema_json(df)
+            >>> with open('schema.json', 'w') as f:
+            ...     f.write(schema_json)
+        """
+        if self.target_type != 'bigquery':
+            logger.warning(f"Generating BigQuery JSON schema for {self.target_type} mapper")
+        
+        schema, _ = self.generate_schema(df, **kwargs)
+        bq_schema = []
+        for field in schema:
+            bq_field = {
+                'name': field['name'],
+                'type': field['type'],
+                'mode': field.get('mode', 'NULLABLE')
+            }
+            if 'description' in field:
+                bq_field['description'] = field['description']
+            bq_schema.append(bq_field)
+        
+        return json.dumps(bq_schema, indent=2)
+    
+    @property
+    def supported_platforms(self) -> List[str]:
+        """Get list of supported platforms."""
+        return SUPPORTED_PLATFORMS
+    
+    def __repr__(self) -> str:
+        return f"SchemaMapper(target_type='{self.target_type}')"
