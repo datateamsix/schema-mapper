@@ -90,7 +90,7 @@ pip install schema-mapper[all]
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/schema-mapper.git
+git clone https://github.com/datateamsix/schema-mapper.git
 cd schema-mapper
 
 # Install in development mode
@@ -399,7 +399,7 @@ configure_logging(logging.DEBUG)
 ## 📞 Support
 
 For issues or questions:
-- GitHub Issues: https://github.com/yourusername/schema-mapper/issues
+- GitHub Issues: https://github.com/datateamsix/schema-mapper/issues
 - Email: dataeng@example.com
 
 ---

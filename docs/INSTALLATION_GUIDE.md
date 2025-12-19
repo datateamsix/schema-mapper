@@ -296,7 +296,7 @@ pip install schema-mapper
 
 ```bash
 # Clone repo
-git clone https://github.com/yourusername/schema-mapper.git
+git clone https://github.com/datateamsix/schema-mapper.git
 cd schema-mapper
 
 # Create virtual environment

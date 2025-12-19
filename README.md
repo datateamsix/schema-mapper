@@ -485,7 +485,7 @@ Built for data engineers working across:
 
 ## Support
 
-For issues, questions, or contributions, please visit the [GitHub repository](https://github.com/yourusername/schema-mapper).
+For issues, questions, or contributions, please visit the [GitHub repository](https://github.com/datateamsix/schema-mapper).
 
 ---
 

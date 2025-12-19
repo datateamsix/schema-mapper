@@ -73,4 +73,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Usage examples
 - API documentation
 
-[1.0.0]: https://github.com/yourusername/schema-mapper/releases/tag/v1.0.0
+[1.0.0]: https://github.com/datateamsix/schema-mapper/releases/tag/v1.0.0

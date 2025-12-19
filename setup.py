@@ -25,11 +25,11 @@ setup(
     description=version['__description__'],
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/yourusername/schema-mapper',
+    url='https://github.com/datateamsix/schema-mapper',
     project_urls={
-        'Bug Tracker': 'https://github.com/yourusername/schema-mapper/issues',
-        'Documentation': 'https://github.com/yourusername/schema-mapper#readme',
-        'Source Code': 'https://github.com/yourusername/schema-mapper',
+        'Bug Tracker': 'https://github.com/datateamsix/schema-mapper/issues',
+        'Documentation': 'https://github.com/datateamsix/schema-mapper#readme',
+        'Source Code': 'https://github.com/datateamsix/schema-mapper',
     },
     packages=find_packages(exclude=['tests', 'tests.*', 'docs']),
     classifiers=[

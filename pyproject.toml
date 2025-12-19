@@ -8,7 +8,7 @@ version = "1.0.0"
 description = "Universal database schema mapper for BigQuery, Snowflake, Redshift, SQL Server, and PostgreSQL"
 readme = "README.md"
 authors = [
-    {name = "Data Engineering Team", email = "dataeng@example.com"}
+    {name = "DataTeamSix", email = "research@dt6.io"}
 ]
 license = {text = "MIT"}
 classifiers = [
@@ -51,10 +51,10 @@ all = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/schema-mapper"
-Documentation = "https://github.com/yourusername/schema-mapper#readme"
-Repository = "https://github.com/yourusername/schema-mapper"
-"Bug Tracker" = "https://github.com/yourusername/schema-mapper/issues"
+Homepage = "https://github.com/datateamsix/schema-mapper"
+Documentation = "https://github.com/datateamsix/schema-mapper#readme"
+Repository = "https://github.com/datateamsix/schema-mapper"
+"Bug Tracker" = "https://github.com/datateamsix/schema-mapper/issues"
 
 [project.scripts]
 schema-mapper = "schema_mapper.cli:main"
