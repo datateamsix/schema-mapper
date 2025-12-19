@@ -3,27 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>schema-mapper - Universal Database Schema Mapping</title>
-    <meta name="description" content="Automatically generate schemas, DDL statements, and prepare your data for BigQuery, Snowflake, Redshift, SQL Server, and PostgreSQL">
+    <title>schema-mapper - One Schema, Every Database</title>
+    <meta name="description" content="Define your schema once, deploy everywhere. Canonical schema mapping for BigQuery, Snowflake, Redshift, SQL Server, and PostgreSQL">
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&family=Source+Code+Pro:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Font Awesome for modern icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
     <!-- Navigation -->
     <nav class="navbar">
         <div class="container">
             <div class="nav-brand">
-                <img src="images/sm-logo.png" alt="Schema Mapper" class="nav-logo">
+                <img src="https://raw.githubusercontent.com/datateamsix/schema-mapper/main/images/sm-logo.png" alt="Schema Mapper" class="nav-logo">
                 <span class="nav-title">schema-mapper</span>
             </div>
             <ul class="nav-links">
+                <li><a href="#use-cases">Use Cases</a></li>
                 <li><a href="#features">Features</a></li>
                 <li><a href="#installation">Installation</a></li>
                 <li><a href="#quickstart">Quick Start</a></li>
-                <li><a href="#documentation">Documentation</a></li>
-                <li><a href="https://github.com/datateamsix/schema-mapper" class="btn-github">GitHub</a></li>
+                <li><a href="https://github.com/datateamsix/schema-mapper" class="btn-github"><i class="fab fa-github"></i> GitHub</a></li>
             </ul>
         </div>
     </nav>
@@ -32,24 +34,105 @@
     <section class="hero">
         <div class="container">
             <div class="hero-content">
-                <img src="images/sm-logo.png" alt="Schema Mapper Logo" class="hero-logo">
-                <h1>Universal Database Schema Mapper</h1>
-                <p class="hero-subtitle">Automatically generate schemas, DDL statements, and prepare your data for loading into any major database platform</p>
+                <img src="https://raw.githubusercontent.com/datateamsix/schema-mapper/main/images/sm-logo.png" alt="Schema Mapper Logo" class="hero-logo">
+                <h1>One Schema, Every Database</h1>
+                <p class="hero-tagline">Define your canonical schema once. Deploy to BigQuery, Snowflake, Redshift, SQL Server, and PostgreSQL instantly.</p>
+                <p class="hero-subtitle">Stop writing the same schema five different ways. Build faster, maintain less, ship data pipelines with confidence.</p>
                 <div class="hero-badges">
                     <img src="https://badge.fury.io/py/schema-mapper.svg" alt="PyPI version">
                     <img src="https://img.shields.io/pypi/pyversions/schema-mapper.svg" alt="Python Support">
                     <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License">
+                    <img src="https://img.shields.io/badge/Tests-111%2F111-brightgreen" alt="Tests">
                 </div>
                 <div class="hero-buttons">
-                    <a href="#installation" class="btn btn-primary">Get Started</a>
-                    <a href="https://github.com/datateamsix/schema-mapper" class="btn btn-secondary">View on GitHub</a>
+                    <a href="#installation" class="btn btn-primary"><i class="fas fa-download"></i> Get Started</a>
+                    <a href="https://github.com/datateamsix/schema-mapper" class="btn btn-secondary"><i class="fab fa-github"></i> View on GitHub</a>
                 </div>
                 <div class="platform-icons">
-                    <span class="platform-badge">BigQuery</span>
-                    <span class="platform-badge">Snowflake</span>
-                    <span class="platform-badge">Redshift</span>
-                    <span class="platform-badge">SQL Server</span>
-                    <span class="platform-badge">PostgreSQL</span>
+                    <span class="platform-badge"><i class="fas fa-cloud"></i> BigQuery</span>
+                    <span class="platform-badge"><i class="fas fa-snowflake"></i> Snowflake</span>
+                    <span class="platform-badge"><i class="fas fa-database"></i> Redshift</span>
+                    <span class="platform-badge"><i class="fas fa-server"></i> SQL Server</span>
+                    <span class="platform-badge"><i class="fas fa-elephant"></i> PostgreSQL</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Built For Section -->
+    <section class="built-for">
+        <div class="container">
+            <h2 class="section-title">Built For Data Teams</h2>
+            <p class="section-subtitle">Whether you're migrating clouds, building pipelines, or prototyping architectures</p>
+            <div class="audience-grid">
+                <div class="audience-card">
+                    <div class="audience-icon"><i class="fas fa-code"></i></div>
+                    <h3>Data Engineers</h3>
+                    <p>Build multi-cloud pipelines without manual schema translation. One canonical source, infinite targets.</p>
+                </div>
+                <div class="audience-card">
+                    <div class="audience-icon"><i class="fas fa-chart-line"></i></div>
+                    <h3>Analytics Engineers</h3>
+                    <p>Accelerate dbt workflows with auto-generated schemas and optimized DDL for your analytics warehouse.</p>
+                </div>
+                <div class="audience-card">
+                    <div class="audience-icon"><i class="fas fa-flask"></i></div>
+                    <h3>Data Scientists</h3>
+                    <p>Prototype across platforms to find the best fit. Test BigQuery vs Snowflake in minutes, not days.</p>
+                </div>
+                <div class="audience-card">
+                    <div class="audience-icon"><i class="fas fa-users-cog"></i></div>
+                    <h3>Platform Teams</h3>
+                    <p>Standardize schema practices across your organization. Single source of truth for data contracts.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Use Cases Section -->
+    <section id="use-cases" class="use-cases">
+        <div class="container">
+            <h2 class="section-title">Why schema-mapper?</h2>
+            <div class="use-case-grid-large">
+                <div class="use-case-card-large">
+                    <div class="use-case-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                    <h3>Multi-Cloud Migrations</h3>
+                    <p>Moving from Redshift to Snowflake? Replatforming to BigQuery? Generate platform-specific schemas instantly without rewriting everything.</p>
+                    <ul class="benefit-list">
+                        <li><i class="fas fa-check-circle"></i> Zero manual schema translation</li>
+                        <li><i class="fas fa-check-circle"></i> Consistent type mapping</li>
+                        <li><i class="fas fa-check-circle"></i> Production-ready DDL</li>
+                    </ul>
+                </div>
+                <div class="use-case-card-large">
+                    <div class="use-case-icon"><i class="fas fa-project-diagram"></i></div>
+                    <h3>Automated Data Pipelines</h3>
+                    <p>Stop hardcoding schemas in your ETL. Auto-detect types, clean column names, validate data quality — all before you load.</p>
+                    <ul class="benefit-list">
+                        <li><i class="fas fa-check-circle"></i> Infer schema from CSVs automatically</li>
+                        <li><i class="fas fa-check-circle"></i> Standardize messy column names</li>
+                        <li><i class="fas fa-check-circle"></i> Pre-flight validation checks</li>
+                    </ul>
+                </div>
+                <div class="use-case-card-large">
+                    <div class="use-case-icon"><i class="fas fa-tachometer-alt"></i></div>
+                    <h3>Performance Optimization</h3>
+                    <p>Generate DDL with clustering, partitioning, and distribution strategies baked in. Platform-optimized out of the box.</p>
+                    <ul class="benefit-list">
+                        <li><i class="fas fa-check-circle"></i> Auto-partition by date columns</li>
+                        <li><i class="fas fa-check-circle"></i> Cluster by high-cardinality fields</li>
+                        <li><i class="fas fa-check-circle"></i> Distribution keys for Redshift</li>
+                    </ul>
+                </div>
+                <div class="use-case-card-large">
+                    <div class="use-case-icon"><i class="fas fa-rocket"></i></div>
+                    <h3>Rapid Prototyping</h3>
+                    <p>Test data architectures across platforms in minutes. Compare BigQuery vs Snowflake performance before you commit.</p>
+                    <ul class="benefit-list">
+                        <li><i class="fas fa-check-circle"></i> Deploy to 5 platforms instantly</li>
+                        <li><i class="fas fa-check-circle"></i> A/B test database choices</li>
+                        <li><i class="fas fa-check-circle"></i> Fail fast, iterate faster</li>
+                    </ul>
                 </div>
             </div>
         </div>
@@ -61,34 +144,44 @@
             <h2 class="section-title">Features</h2>
             <div class="features-grid">
                 <div class="feature-card">
-                    <div class="feature-icon">🎯</div>
-                    <h3>5 Platform Support</h3>
-                    <p>BigQuery, Snowflake, Redshift, SQL Server, and PostgreSQL - all from a single API</p>
+                    <div class="feature-icon"><i class="fas fa-network-wired"></i></div>
+                    <h3>Canonical Schema</h3>
+                    <p>Define once in a platform-agnostic format. Render to any database dialect on demand.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">🤖</div>
-                    <h3>Automatic Type Detection</h3>
-                    <p>Intelligently converts strings to dates, numbers, and booleans automatically</p>
+                    <div class="feature-icon"><i class="fas fa-magic"></i></div>
+                    <h3>Smart Type Detection</h3>
+                    <p>Automatically detect dates, numbers, booleans from string columns. No manual type casting.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">🔧</div>
+                    <div class="feature-icon"><i class="fas fa-brush"></i></div>
                     <h3>Column Standardization</h3>
-                    <p>Cleans messy column names for database compatibility across platforms</p>
+                    <p>Clean messy names: "User ID#" → user_id. Remove special chars, handle duplicates automatically.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">✅</div>
+                    <div class="feature-icon"><i class="fas fa-shield-alt"></i></div>
                     <h3>Data Validation</h3>
-                    <p>Pre-load validation to catch errors early and ensure data quality</p>
+                    <p>Catch errors before load: empty DataFrames, duplicate columns, high NULL %, mixed types.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">📋</div>
-                    <h3>Schema Generation</h3>
-                    <p>JSON and DDL formats ready for CLI or API usage with any platform</p>
+                    <div class="feature-icon"><i class="fas fa-file-code"></i></div>
+                    <h3>DDL Generation</h3>
+                    <p>Production-ready CREATE TABLE statements with comments, constraints, and optimization hints.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">🚀</div>
-                    <h3>Table Optimization</h3>
-                    <p>Clustering, partitioning, and distribution strategies for optimal performance</p>
+                    <div class="feature-icon"><i class="fas fa-bolt"></i></div>
+                    <h3>Performance Tuning</h3>
+                    <p>Auto-generate clustering, partitioning, sort keys, and distribution strategies per platform.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-file-alt"></i></div>
+                    <h3>JSON Schema Export</h3>
+                    <p>BigQuery-specific JSON schema for bq CLI load commands. Direct integration.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-terminal"></i></div>
+                    <h3>CLI & Python API</h3>
+                    <p>Use from command line or Python. Flexible for scripts, notebooks, or automation.</p>
                 </div>
             </div>
         </div>
@@ -97,11 +190,25 @@
     <!-- Architecture Section -->
     <section class="architecture">
         <div class="container">
-            <h2 class="section-title">Architecture</h2>
-            <p class="section-subtitle">Canonical schema approach: infer once, render to any platform</p>
+            <h2 class="section-title">Canonical Schema Architecture</h2>
+            <p class="section-subtitle">Infer once. Render everywhere. Your single source of truth.</p>
             <div class="architecture-diagrams">
-                <img src="images/schema-mapper-architecture.png" alt="Schema Mapper Architecture" class="diagram">
-                <img src="images/canonical-schema.png" alt="Canonical Schema Flow" class="diagram">
+                <img src="https://raw.githubusercontent.com/datateamsix/schema-mapper/main/images/schema-mapper-architecture.png" alt="Schema Mapper Architecture" class="diagram">
+                <img src="https://raw.githubusercontent.com/datateamsix/schema-mapper/main/images/canonical-schema.png" alt="Canonical Schema Flow" class="diagram">
+            </div>
+            <div class="architecture-benefits">
+                <div class="benefit-item">
+                    <i class="fas fa-check-double"></i>
+                    <p>No vendor lock-in — switch databases without rewriting schemas</p>
+                </div>
+                <div class="benefit-item">
+                    <i class="fas fa-check-double"></i>
+                    <p>Consistent type mapping across all platforms</p>
+                </div>
+                <div class="benefit-item">
+                    <i class="fas fa-check-double"></i>
+                    <p>Extensible renderer pattern — add new databases easily</p>
+                </div>
             </div>
         </div>
     </section>
@@ -112,20 +219,24 @@
             <h2 class="section-title">Installation</h2>
             <div class="install-grid">
                 <div class="install-card">
+                    <div class="install-icon"><i class="fas fa-download"></i></div>
                     <h3>Basic Installation</h3>
                     <pre><code>pip install schema-mapper</code></pre>
+                    <p class="install-note">Core package only — no platform dependencies</p>
                 </div>
                 <div class="install-card">
+                    <div class="install-icon"><i class="fas fa-puzzle-piece"></i></div>
                     <h3>Platform-Specific</h3>
                     <pre><code>pip install schema-mapper[bigquery]
 pip install schema-mapper[snowflake]
-pip install schema-mapper[redshift]
-pip install schema-mapper[sqlserver]
-pip install schema-mapper[postgresql]</code></pre>
+pip install schema-mapper[redshift]</code></pre>
+                    <p class="install-note">Install only what you need</p>
                 </div>
                 <div class="install-card">
+                    <div class="install-icon"><i class="fas fa-cubes"></i></div>
                     <h3>All Platforms</h3>
                     <pre><code>pip install schema-mapper[all]</code></pre>
+                    <p class="install-note">Everything included — ready for any database</p>
                 </div>
             </div>
         </div>
@@ -135,9 +246,12 @@ pip install schema-mapper[postgresql]</code></pre>
     <section id="quickstart" class="quickstart">
         <div class="container">
             <h2 class="section-title">Quick Start</h2>
+
+            <h3 class="subsection-title"><i class="fas fa-zap"></i> One-Line ETL Preparation</h3>
             <div class="code-example">
                 <div class="code-header">
-                    <span class="code-lang">Python</span>
+                    <span class="code-lang"><i class="fab fa-python"></i> Python</span>
+                    <button class="copy-btn"><i class="far fa-copy"></i> Copy</button>
                 </div>
                 <pre><code class="language-python">from schema_mapper import prepare_for_load
 import pandas as pd
@@ -158,16 +272,41 @@ else:
     print("❌ Fix these errors:", issues['errors'])</code></pre>
             </div>
 
-            <h3 class="subsection-title">Generate Optimized DDL with Clustering & Partitioning</h3>
+            <h3 class="subsection-title"><i class="fas fa-sitemap"></i> Canonical Schema → Multi-Platform</h3>
             <div class="code-example">
                 <div class="code-header">
-                    <span class="code-lang">Python</span>
+                    <span class="code-lang"><i class="fab fa-python"></i> Python</span>
+                    <button class="copy-btn"><i class="far fa-copy"></i> Copy</button>
+                </div>
+                <pre><code class="language-python">from schema_mapper.canonical import infer_canonical_schema
+from schema_mapper.renderers import RendererFactory
+
+# Step 1: Infer canonical schema once
+canonical = infer_canonical_schema(
+    df,
+    table_name='events',
+    dataset_name='analytics',
+    partition_columns=['event_date'],
+    cluster_columns=['user_id']
+)
+
+# Step 2: Render to any platform
+for platform in ['bigquery', 'snowflake', 'redshift']:
+    renderer = RendererFactory.get_renderer(platform, canonical)
+    ddl = renderer.to_ddl()
+    print(f"{platform.upper()} DDL:")
+    print(ddl)
+    print()</code></pre>
+            </div>
+
+            <h3 class="subsection-title"><i class="fas fa-cogs"></i> Optimized DDL with Clustering & Partitioning</h3>
+            <div class="code-example">
+                <div class="code-header">
+                    <span class="code-lang"><i class="fab fa-python"></i> Python</span>
+                    <button class="copy-btn"><i class="far fa-copy"></i> Copy</button>
                 </div>
                 <pre><code class="language-python">from schema_mapper.generators_enhanced import get_enhanced_ddl_generator
 from schema_mapper.ddl_mappings import DDLOptions, ClusteringConfig, PartitionConfig, PartitionType
-import pandas as pd
-
-df = pd.read_csv('events.csv')
 
 # BigQuery: Partitioned by date, clustered by user_id
 generator = get_enhanced_ddl_generator('bigquery')
@@ -180,10 +319,6 @@ options = DDLOptions(
     clustering=ClusteringConfig(columns=['user_id', 'event_type'])
 )
 
-# Generate schema first
-mapper = SchemaMapper('bigquery')
-schema, _ = mapper.generate_schema(df)
-
 # Generate optimized DDL
 ddl = generator.generate(
     schema=schema,
@@ -191,7 +326,9 @@ ddl = generator.generate(
     dataset_name='analytics',
     project_id='my-project',
     ddl_options=options
-)</code></pre>
+)
+
+# Result: CREATE TABLE with PARTITION BY and CLUSTER BY</code></pre>
             </div>
         </div>
     </section>
@@ -200,50 +337,51 @@ ddl = generator.generate(
     <section class="platform-comparison">
         <div class="container">
             <h2 class="section-title">Platform Capabilities</h2>
+            <p class="section-subtitle">Automatic optimization based on what each database supports</p>
             <div class="table-responsive">
                 <table class="comparison-table">
                     <thead>
                         <tr>
                             <th>Feature</th>
-                            <th>BigQuery</th>
-                            <th>Snowflake</th>
-                            <th>Redshift</th>
-                            <th>SQL Server</th>
-                            <th>PostgreSQL</th>
+                            <th><i class="fas fa-cloud"></i> BigQuery</th>
+                            <th><i class="fas fa-snowflake"></i> Snowflake</th>
+                            <th><i class="fas fa-database"></i> Redshift</th>
+                            <th><i class="fas fa-server"></i> SQL Server</th>
+                            <th><i class="fas fa-elephant"></i> PostgreSQL</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
                             <td><strong>Partitioning</strong></td>
-                            <td><span class="supported">✅ DATE/TIMESTAMP/RANGE</span></td>
-                            <td><span class="partial">⚠️ Auto Micro</span></td>
-                            <td><span class="not-supported">❌</span></td>
-                            <td><span class="supported">✅ Function+Scheme</span></td>
-                            <td><span class="supported">✅ RANGE/LIST/HASH</span></td>
+                            <td><span class="supported"><i class="fas fa-check-circle"></i> DATE/TIMESTAMP/RANGE</span></td>
+                            <td><span class="partial"><i class="fas fa-minus-circle"></i> Auto Micro</span></td>
+                            <td><span class="not-supported"><i class="fas fa-times-circle"></i> Not Supported</span></td>
+                            <td><span class="supported"><i class="fas fa-check-circle"></i> Function+Scheme</span></td>
+                            <td><span class="supported"><i class="fas fa-check-circle"></i> RANGE/LIST/HASH</span></td>
                         </tr>
                         <tr>
                             <td><strong>Clustering</strong></td>
-                            <td><span class="supported">✅ Up to 4 cols</span></td>
-                            <td><span class="supported">✅ Up to 4 cols</span></td>
-                            <td><span class="not-supported">❌</span></td>
-                            <td><span class="supported">✅ Clustered Index</span></td>
-                            <td><span class="partial">⚠️ Via Indexes</span></td>
+                            <td><span class="supported"><i class="fas fa-check-circle"></i> Up to 4 cols</span></td>
+                            <td><span class="supported"><i class="fas fa-check-circle"></i> Up to 4 cols</span></td>
+                            <td><span class="not-supported"><i class="fas fa-times-circle"></i> Not Supported</span></td>
+                            <td><span class="supported"><i class="fas fa-check-circle"></i> Clustered Index</span></td>
+                            <td><span class="partial"><i class="fas fa-minus-circle"></i> Via Indexes</span></td>
                         </tr>
                         <tr>
                             <td><strong>Distribution</strong></td>
-                            <td><span class="not-supported">❌</span></td>
-                            <td><span class="not-supported">❌</span></td>
-                            <td><span class="supported">✅ KEY/ALL/EVEN/AUTO</span></td>
-                            <td><span class="not-supported">❌</span></td>
-                            <td><span class="not-supported">❌</span></td>
+                            <td><span class="not-supported"><i class="fas fa-times-circle"></i> Not Supported</span></td>
+                            <td><span class="not-supported"><i class="fas fa-times-circle"></i> Not Supported</span></td>
+                            <td><span class="supported"><i class="fas fa-check-circle"></i> KEY/ALL/EVEN/AUTO</span></td>
+                            <td><span class="not-supported"><i class="fas fa-times-circle"></i> Not Supported</span></td>
+                            <td><span class="not-supported"><i class="fas fa-times-circle"></i> Not Supported</span></td>
                         </tr>
                         <tr>
                             <td><strong>Sort Keys</strong></td>
-                            <td><span class="not-supported">❌</span></td>
-                            <td><span class="not-supported">❌</span></td>
-                            <td><span class="supported">✅ Compound/Interleaved</span></td>
-                            <td><span class="not-supported">❌</span></td>
-                            <td><span class="not-supported">❌</span></td>
+                            <td><span class="not-supported"><i class="fas fa-times-circle"></i> Not Supported</span></td>
+                            <td><span class="not-supported"><i class="fas fa-times-circle"></i> Not Supported</span></td>
+                            <td><span class="supported"><i class="fas fa-check-circle"></i> Compound/Interleaved</span></td>
+                            <td><span class="not-supported"><i class="fas fa-times-circle"></i> Not Supported</span></td>
+                            <td><span class="not-supported"><i class="fas fa-times-circle"></i> Not Supported</span></td>
                         </tr>
                     </tbody>
                 </table>
@@ -251,56 +389,17 @@ ddl = generator.generate(
         </div>
     </section>
 
-    <!-- Documentation Section -->
-    <section id="documentation" class="documentation">
+    <!-- CTA Section -->
+    <section class="cta">
         <div class="container">
-            <h2 class="section-title">Documentation</h2>
-            <div class="docs-grid">
-                <div class="doc-card">
-                    <h3>📚 API Reference</h3>
-                    <p>Complete API documentation for SchemaMapper, prepare_for_load(), and all helper functions</p>
-                    <a href="#" class="doc-link">Read More →</a>
+            <div class="cta-content">
+                <h2>Ready to ship data faster?</h2>
+                <p>Join data teams using schema-mapper to build multi-cloud pipelines</p>
+                <div class="cta-buttons">
+                    <a href="#installation" class="btn btn-primary-large"><i class="fas fa-rocket"></i> Get Started Now</a>
+                    <a href="https://github.com/datateamsix/schema-mapper" class="btn btn-secondary-large"><i class="fab fa-github"></i> Star on GitHub</a>
                 </div>
-                <div class="doc-card">
-                    <h3>🎨 Type Mapping Guide</h3>
-                    <p>Comprehensive guide to type conversions across all supported platforms</p>
-                    <a href="#" class="doc-link">Read More →</a>
-                </div>
-                <div class="doc-card">
-                    <h3>💡 Example Scripts</h3>
-                    <p>Real-world examples: basic usage, multi-platform, production pipelines, and optimization</p>
-                    <a href="#" class="doc-link">View Examples →</a>
-                </div>
-                <div class="doc-card">
-                    <h3>🏗️ Architecture Guide</h3>
-                    <p>Deep dive into the canonical schema architecture and renderer pattern</p>
-                    <a href="#" class="doc-link">Read More →</a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Use Cases Section -->
-    <section class="use-cases">
-        <div class="container">
-            <h2 class="section-title">Use Cases</h2>
-            <div class="use-case-grid">
-                <div class="use-case-card">
-                    <h3>🔄 Multi-Cloud Migrations</h3>
-                    <p>Move data seamlessly between cloud providers without manual schema translation</p>
-                </div>
-                <div class="use-case-card">
-                    <h3>📊 Analytics Pipelines</h3>
-                    <p>Automate schema generation for data ingestion into your analytics warehouse</p>
-                </div>
-                <div class="use-case-card">
-                    <h3>🧹 Data Cleaning</h3>
-                    <p>Standardize messy CSV exports and validate data quality before loading</p>
-                </div>
-                <div class="use-case-card">
-                    <h3>🚀 Rapid Prototyping</h3>
-                    <p>Quickly test data across multiple platforms to find the best fit</p>
-                </div>
+                <p class="cta-note"><i class="fas fa-code"></i> Open source • MIT License • 111/111 tests passing</p>
             </div>
         </div>
     </section>
@@ -310,40 +409,44 @@ ddl = generator.generate(
         <div class="container">
             <div class="footer-content">
                 <div class="footer-section">
-                    <h4>schema-mapper</h4>
-                    <p>Universal database schema mapping for modern data engineering</p>
+                    <h4><i class="fas fa-sitemap"></i> schema-mapper</h4>
+                    <p>One canonical schema. Every database. Zero lock-in.</p>
+                    <div class="footer-social">
+                        <a href="https://github.com/datateamsix/schema-mapper"><i class="fab fa-github"></i></a>
+                        <a href="https://pypi.org/project/schema-mapper/"><i class="fas fa-cube"></i></a>
+                    </div>
                 </div>
                 <div class="footer-section">
                     <h4>Resources</h4>
                     <ul>
-                        <li><a href="https://github.com/datateamsix/schema-mapper">GitHub</a></li>
-                        <li><a href="https://pypi.org/project/schema-mapper/">PyPI</a></li>
-                        <li><a href="#">Documentation</a></li>
-                        <li><a href="#">Examples</a></li>
+                        <li><a href="https://github.com/datateamsix/schema-mapper"><i class="fab fa-github"></i> GitHub</a></li>
+                        <li><a href="https://pypi.org/project/schema-mapper/"><i class="fas fa-cube"></i> PyPI</a></li>
+                        <li><a href="https://github.com/datateamsix/schema-mapper#readme"><i class="fas fa-book"></i> Documentation</a></li>
+                        <li><a href="https://github.com/datateamsix/schema-mapper/tree/main/examples"><i class="fas fa-code"></i> Examples</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
                     <h4>Platforms</h4>
                     <ul>
-                        <li><a href="#">BigQuery</a></li>
-                        <li><a href="#">Snowflake</a></li>
-                        <li><a href="#">Redshift</a></li>
-                        <li><a href="#">SQL Server</a></li>
-                        <li><a href="#">PostgreSQL</a></li>
+                        <li><a href="#"><i class="fas fa-cloud"></i> BigQuery</a></li>
+                        <li><a href="#"><i class="fas fa-snowflake"></i> Snowflake</a></li>
+                        <li><a href="#"><i class="fas fa-database"></i> Redshift</a></li>
+                        <li><a href="#"><i class="fas fa-server"></i> SQL Server</a></li>
+                        <li><a href="#"><i class="fas fa-elephant"></i> PostgreSQL</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
                     <h4>Community</h4>
                     <ul>
-                        <li><a href="#">Contributing</a></li>
-                        <li><a href="#">Issues</a></li>
-                        <li><a href="#">Discussions</a></li>
-                        <li><a href="#">License (MIT)</a></li>
+                        <li><a href="https://github.com/datateamsix/schema-mapper/blob/main/README.md#contributing"><i class="fas fa-hands-helping"></i> Contributing</a></li>
+                        <li><a href="https://github.com/datateamsix/schema-mapper/issues"><i class="fas fa-bug"></i> Issues</a></li>
+                        <li><a href="https://github.com/datateamsix/schema-mapper/discussions"><i class="fas fa-comments"></i> Discussions</a></li>
+                        <li><a href="https://github.com/datateamsix/schema-mapper/blob/main/LICENSE"><i class="fas fa-balance-scale"></i> License (MIT)</a></li>
                     </ul>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2024 schema-mapper. Built with ❤️ for data engineers working across multiple cloud platforms.</p>
+                <p>&copy; 2025 schema-mapper by <a href="https://github.com/datateamsix">DataTeamSix</a>. Built for data engineers working across clouds.</p>
             </div>
         </div>
     </footer>
