@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="images/sm-logo.png" alt="Schema Mapper Logo" width="200"/>
+  <img src="https://raw.githubusercontent.com/datateamsix/schema-mapper/main/images/sm-logo.png" alt="Schema Mapper Logo" width="200"/>
 </div>
 
 # schema-mapper
@@ -27,13 +27,13 @@ Automatically generate schemas, DDL statements, and prepare your data for loadin
 ## Architecture
 
 <div align="center">
-  <img src="images/schema-mapper-architecture.png" alt="Schema Mapper Architecture" width="800"/>
+  <img src="https://raw.githubusercontent.com/datateamsix/schema-mapper/main/images/schema-mapper-architecture.png" alt="Schema Mapper Architecture" width="800"/>
 </div>
 
 The schema-mapper uses a **canonical schema** approach: infer once, render to any platform. This ensures consistent type mapping and optimization strategies across all supported databases.
 
 <div align="center">
-  <img src="images/canonical-schema.png" alt="Canonical Schema Flow" width="700"/>
+  <img src="https://raw.githubusercontent.com/datateamsix/schema-mapper/main/images/canonical-schema.png" alt="Canonical Schema Flow" width="700"/>
 </div>
 
 ## Installation
