@@ -170,6 +170,32 @@ code, pre {
     height: 20px;
 }
 
+.hero-install {
+    margin-bottom: 2rem;
+}
+
+.install-snippet {
+    background: var(--gray-900);
+    color: #FFFFFF;
+    padding: 1.25rem 2rem;
+    border-radius: 8px;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 1.1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+}
+
+.install-prompt {
+    color: var(--success-green);
+    font-weight: 600;
+}
+
+.install-snippet code {
+    color: #FFFFFF;
+}
+
 .hero-buttons {
     display: flex;
     justify-content: center;
@@ -316,6 +342,52 @@ section {
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
+.architecture-benefits-table {
+    display: flex;
+    justify-content: center;
+    margin-top: 3rem;
+}
+
+.benefits-table {
+    background: #FFFFFF;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    max-width: 800px;
+}
+
+.benefits-table tbody tr {
+    border-bottom: 1px solid var(--border-color);
+    transition: background 0.3s ease;
+}
+
+.benefits-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.benefits-table tbody tr:hover {
+    background: var(--light-blue);
+}
+
+.benefits-table .check-icon {
+    padding: 1.5rem;
+    text-align: center;
+    width: 80px;
+}
+
+.benefits-table .check-icon i {
+    color: var(--success-green);
+    font-size: 1.8rem;
+}
+
+.benefits-table .benefit-text {
+    padding: 1.5rem 2rem 1.5rem 0;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    line-height: 1.6;
+    font-weight: 500;
+}
+
 /* Installation Section */
 .installation {
     background: var(--gray-50);
@@ -393,6 +465,53 @@ section {
     color: #F8F8F2;
     font-size: 0.95rem;
     line-height: 1.6;
+}
+
+/* Monokai-style Syntax Highlighting */
+.code-example .language-python {
+    display: block;
+}
+
+/* Python Keywords - Purple */
+.code-example code .keyword {
+    color: #F92672;
+    font-weight: 600;
+}
+
+/* Import statements - Purple/Pink */
+.code-example code .import {
+    color: #F92672;
+}
+
+/* Strings - Yellow */
+.code-example code .string {
+    color: #E6DB74;
+}
+
+/* Comments - Gray */
+.code-example code .comment {
+    color: #75715E;
+    font-style: italic;
+}
+
+/* Function names - Green */
+.code-example code .function {
+    color: #A6E22E;
+}
+
+/* Numbers - Purple */
+.code-example code .number {
+    color: #AE81FF;
+}
+
+/* Operators */
+.code-example code .operator {
+    color: #F92672;
+}
+
+/* Built-ins */
+.code-example code .builtin {
+    color: #66D9EF;
 }
 
 /* Platform Comparison Section */
