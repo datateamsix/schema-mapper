@@ -467,51 +467,74 @@ section {
     line-height: 1.6;
 }
 
-/* Monokai-style Syntax Highlighting */
-.code-example .language-python {
-    display: block;
-}
-
-/* Python Keywords - Purple */
-.code-example code .keyword {
-    color: #F92672;
-    font-weight: 600;
-}
-
-/* Import statements - Purple/Pink */
-.code-example code .import {
-    color: #F92672;
-}
-
-/* Strings - Yellow */
-.code-example code .string {
-    color: #E6DB74;
-}
-
-/* Comments - Gray */
-.code-example code .comment {
+/* Prism.js Monokai Theme Override */
+.code-example .token.comment,
+.code-example .token.prolog,
+.code-example .token.doctype,
+.code-example .token.cdata {
     color: #75715E;
     font-style: italic;
 }
 
-/* Function names - Green */
-.code-example code .function {
-    color: #A6E22E;
+.code-example .token.punctuation {
+    color: #F8F8F2;
 }
 
-/* Numbers - Purple */
-.code-example code .number {
-    color: #AE81FF;
-}
-
-/* Operators */
-.code-example code .operator {
+.code-example .token.property,
+.code-example .token.tag,
+.code-example .token.constant,
+.code-example .token.symbol,
+.code-example .token.deleted {
     color: #F92672;
 }
 
-/* Built-ins */
-.code-example code .builtin {
+.code-example .token.boolean,
+.code-example .token.number {
+    color: #AE81FF;
+}
+
+.code-example .token.selector,
+.code-example .token.attr-name,
+.code-example .token.string,
+.code-example .token.char,
+.code-example .token.builtin,
+.code-example .token.inserted {
+    color: #E6DB74;
+}
+
+.code-example .token.operator,
+.code-example .token.entity,
+.code-example .token.url,
+.code-example .language-css .token.string,
+.code-example .style .token.string,
+.code-example .token.variable {
+    color: #F8F8F2;
+}
+
+.code-example .token.atrule,
+.code-example .token.attr-value,
+.code-example .token.function,
+.code-example .token.class-name {
+    color: #A6E22E;
+}
+
+.code-example .token.keyword {
     color: #66D9EF;
+    font-weight: 600;
+}
+
+.code-example .token.regex,
+.code-example .token.important {
+    color: #FD971F;
+}
+
+.code-example .token.important,
+.code-example .token.bold {
+    font-weight: bold;
+}
+
+.code-example .token.italic {
+    font-style: italic;
 }
 
 /* Platform Comparison Section */
