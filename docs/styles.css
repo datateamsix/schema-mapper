@@ -849,3 +849,219 @@ html {
     background: var(--secondary-blue);
     color: #FFFFFF;
 }
+
+/* Built For Section - Tabbed Interface */
+.built-for {
+    background: #FFFFFF;
+    padding: 5rem 0;
+}
+
+.role-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin: 3rem 0 2rem;
+    flex-wrap: wrap;
+}
+
+.role-tab {
+    background: #FFFFFF;
+    border: 2px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-family: 'Outfit', sans-serif;
+}
+
+.role-tab i {
+    font-size: 1.5rem;
+}
+
+.role-tab:hover {
+    border-color: var(--secondary-blue);
+    color: var(--primary-blue);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(75, 139, 190, 0.15);
+}
+
+.role-tab.active {
+    background: linear-gradient(135deg, var(--secondary-blue) 0%, var(--accent-blue) 100%);
+    color: #FFFFFF;
+    border-color: var(--secondary-blue);
+    box-shadow: 0 4px 16px rgba(75, 139, 190, 0.3);
+}
+
+.role-content {
+    display: none;
+    opacity: 0;
+    animation: fadeIn 0.5s ease forwards;
+}
+
+.role-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.role-hero {
+    text-align: center;
+    margin: 3rem 0 2.5rem;
+}
+
+.role-icon-large {
+    font-size: 5rem;
+    color: var(--secondary-blue);
+    margin-bottom: 1.5rem;
+}
+
+.role-title {
+    font-size: 2.5rem;
+    color: var(--primary-blue);
+    font-weight: 800;
+    margin-bottom: 0.75rem;
+}
+
+.role-desc {
+    font-size: 1.3rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.before-after-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 2.5rem;
+    margin-top: 3rem;
+    max-width: 1000px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.before-card,
+.after-card {
+    background: #FFFFFF;
+    border-radius: 16px;
+    padding: 2.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.before-card {
+    border-left: 6px solid var(--danger-red);
+}
+
+.after-card {
+    border-left: 6px solid var(--success-green);
+}
+
+.before-card:hover,
+.after-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--gray-100);
+}
+
+.card-header i {
+    font-size: 1.75rem;
+}
+
+.before-card .card-header i {
+    color: var(--danger-red);
+}
+
+.after-card .card-header i {
+    color: var(--success-green);
+}
+
+.card-header span {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--primary-blue);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.pain-points,
+.benefits {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.pain-points li,
+.benefits li {
+    padding: 0.875rem 0;
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: var(--text-primary);
+    position: relative;
+    padding-left: 1.5rem;
+}
+
+.pain-points li::before {
+    content: "×";
+    position: absolute;
+    left: 0;
+    color: var(--danger-red);
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.benefits li {
+    color: var(--text-primary);
+}
+
+.benefits li strong {
+    color: var(--success-green);
+    font-weight: 700;
+}
+
+/* Responsive - Built For Section */
+@media (max-width: 900px) {
+    .before-after-grid {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+
+    .role-tabs {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .role-tab {
+        justify-content: center;
+    }
+
+    .role-icon-large {
+        font-size: 4rem;
+    }
+
+    .role-title {
+        font-size: 2rem;
+    }
+}

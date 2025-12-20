@@ -69,26 +69,161 @@
         <div class="container">
             <h2 class="section-title"><strong>Built For Data Teams</strong></h2>
             <p class="section-subtitle">Whether you're migrating clouds, building pipelines, or prototyping architectures</p>
-            <div class="audience-grid">
-                <div class="audience-card">
-                    <div class="audience-icon"><i class="fas fa-code"></i></div>
-                    <h3>Data Engineers</h3>
-                    <p>Build multi-cloud pipelines without manual schema translation. One canonical source, infinite targets.</p>
+
+            <!-- Role Selector Tabs -->
+            <div class="role-tabs">
+                <button class="role-tab active" data-role="engineers">
+                    <i class="fas fa-code"></i>
+                    <span>Data Engineers</span>
+                </button>
+                <button class="role-tab" data-role="analytics">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Analytics Engineers</span>
+                </button>
+                <button class="role-tab" data-role="scientists">
+                    <i class="fas fa-flask"></i>
+                    <span>Data Scientists</span>
+                </button>
+                <button class="role-tab" data-role="platform">
+                    <i class="fas fa-users-cog"></i>
+                    <span>Platform Teams</span>
+                </button>
+            </div>
+
+            <!-- Role Content -->
+            <div class="role-content active" id="role-engineers">
+                <div class="role-hero">
+                    <div class="role-icon-large"><i class="fas fa-code"></i></div>
+                    <h3 class="role-title">Data Engineers</h3>
+                    <p class="role-desc">Building multi-cloud data pipelines at scale</p>
                 </div>
-                <div class="audience-card">
-                    <div class="audience-icon"><i class="fas fa-chart-line"></i></div>
-                    <h3>Analytics Engineers</h3>
-                    <p>Accelerate dbt workflows with auto-generated schemas and optimized DDL for your analytics warehouse.</p>
+                <div class="before-after-grid">
+                    <div class="before-card">
+                        <div class="card-header">
+                            <i class="fas fa-times-circle"></i>
+                            <span>Without schema-mapper</span>
+                        </div>
+                        <ul class="pain-points">
+                            <li>Manually write schemas for each platform</li>
+                            <li>Debug type mismatches across databases</li>
+                            <li>Spend hours on schema migrations</li>
+                            <li>Risk data loss from human errors</li>
+                        </ul>
+                    </div>
+                    <div class="after-card">
+                        <div class="card-header success">
+                            <i class="fas fa-check-circle"></i>
+                            <span>With schema-mapper</span>
+                        </div>
+                        <ul class="benefits">
+                            <li><strong>One canonical schema</strong> → deploy to 5 platforms instantly</li>
+                            <li><strong>Auto type detection</strong> → no manual casting required</li>
+                            <li><strong>Cloud migrations</strong> → Redshift to Snowflake in minutes</li>
+                            <li><strong>Pre-flight validation</strong> → catch errors before load</li>
+                        </ul>
+                    </div>
                 </div>
-                <div class="audience-card">
-                    <div class="audience-icon"><i class="fas fa-flask"></i></div>
-                    <h3>Data Scientists</h3>
-                    <p>Prototype across platforms to find the best fit. Test BigQuery vs Snowflake in minutes, not days.</p>
+            </div>
+
+            <div class="role-content" id="role-analytics">
+                <div class="role-hero">
+                    <div class="role-icon-large"><i class="fas fa-chart-line"></i></div>
+                    <h3 class="role-title">Analytics Engineers</h3>
+                    <p class="role-desc">Accelerating dbt workflows and analytics delivery</p>
                 </div>
-                <div class="audience-card">
-                    <div class="audience-icon"><i class="fas fa-users-cog"></i></div>
-                    <h3>Platform Teams</h3>
-                    <p>Standardize schema practices across your organization. Single source of truth for data contracts.</p>
+                <div class="before-after-grid">
+                    <div class="before-card">
+                        <div class="card-header">
+                            <i class="fas fa-times-circle"></i>
+                            <span>Without schema-mapper</span>
+                        </div>
+                        <ul class="pain-points">
+                            <li>Hardcode DDL for every new source</li>
+                            <li>Wait for data eng to create tables</li>
+                            <li>Manual column name cleanup</li>
+                            <li>No clustering or partitioning strategies</li>
+                        </ul>
+                    </div>
+                    <div class="after-card">
+                        <div class="card-header success">
+                            <i class="fas fa-check-circle"></i>
+                            <span>With schema-mapper</span>
+                        </div>
+                        <ul class="benefits">
+                            <li><strong>Auto-generate DDL</strong> → production-ready CREATE statements</li>
+                            <li><strong>Self-service tables</strong> → deploy without waiting</li>
+                            <li><strong>Clean column names</strong> → "User ID#" → user_id automatically</li>
+                            <li><strong>Optimized tables</strong> → clustering & partitioning baked in</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="role-content" id="role-scientists">
+                <div class="role-hero">
+                    <div class="role-icon-large"><i class="fas fa-flask"></i></div>
+                    <h3 class="role-title">Data Scientists</h3>
+                    <p class="role-desc">Prototyping and experimenting across platforms</p>
+                </div>
+                <div class="before-after-grid">
+                    <div class="before-card">
+                        <div class="card-header">
+                            <i class="fas fa-times-circle"></i>
+                            <span>Without schema-mapper</span>
+                        </div>
+                        <ul class="pain-points">
+                            <li>Locked into one platform for testing</li>
+                            <li>Can't compare BigQuery vs Snowflake performance</li>
+                            <li>Days to set up new data sources</li>
+                            <li>Stuck waiting for data eng support</li>
+                        </ul>
+                    </div>
+                    <div class="after-card">
+                        <div class="card-header success">
+                            <i class="fas fa-check-circle"></i>
+                            <span>With schema-mapper</span>
+                        </div>
+                        <ul class="benefits">
+                            <li><strong>Rapid prototyping</strong> → test 5 platforms in parallel</li>
+                            <li><strong>A/B test databases</strong> → find the best fit before committing</li>
+                            <li><strong>Load CSVs instantly</strong> → auto-inferred schemas from Pandas</li>
+                            <li><strong>Fail fast, iterate</strong> → experiment without bottlenecks</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="role-content" id="role-platform">
+                <div class="role-hero">
+                    <div class="role-icon-large"><i class="fas fa-users-cog"></i></div>
+                    <h3 class="role-title">Platform Teams</h3>
+                    <p class="role-desc">Standardizing data practices across the organization</p>
+                </div>
+                <div class="before-after-grid">
+                    <div class="before-card">
+                        <div class="card-header">
+                            <i class="fas fa-times-circle"></i>
+                            <span>Without schema-mapper</span>
+                        </div>
+                        <ul class="pain-points">
+                            <li>Inconsistent schemas across teams</li>
+                            <li>No standard for column naming</li>
+                            <li>Each team reinvents schema tooling</li>
+                            <li>Hard to enforce data contracts</li>
+                        </ul>
+                    </div>
+                    <div class="after-card">
+                        <div class="card-header success">
+                            <i class="fas fa-check-circle"></i>
+                            <span>With schema-mapper</span>
+                        </div>
+                        <ul class="benefits">
+                            <li><strong>Single source of truth</strong> → canonical schema standard</li>
+                            <li><strong>Org-wide naming</strong> → consistent column conventions</li>
+                            <li><strong>Reusable tooling</strong> → entire org on one library</li>
+                            <li><strong>Data contracts</strong> → enforce quality with validation</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>

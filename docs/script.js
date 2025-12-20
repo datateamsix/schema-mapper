@@ -143,4 +143,27 @@ const createMobileMenu = () => {
 window.addEventListener('resize', createMobileMenu);
 createMobileMenu();
 
+// Built For Section - Role Tabs
+document.addEventListener('DOMContentLoaded', () => {
+    const roleTabs = document.querySelectorAll('.role-tab');
+    const roleContents = document.querySelectorAll('.role-content');
+
+    roleTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const targetRole = tab.getAttribute('data-role');
+
+            // Remove active class from all tabs and contents
+            roleTabs.forEach(t => t.classList.remove('active'));
+            roleContents.forEach(c => c.classList.remove('active'));
+
+            // Add active class to clicked tab and corresponding content
+            tab.classList.add('active');
+            const targetContent = document.getElementById(`role-${targetRole}`);
+            if (targetContent) {
+                targetContent.classList.add('active');
+            }
+        });
+    });
+});
+
 console.log('schema-mapper documentation loaded successfully!');
