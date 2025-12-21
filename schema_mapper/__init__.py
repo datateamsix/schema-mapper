@@ -33,6 +33,22 @@ from .validation_rules import ValidationRules
 from .preprocessor import PreProcessor
 from .visualization import DataVisualizer
 
+# Incremental load functionality
+from .incremental import (
+    LoadPattern,
+    MergeStrategy,
+    DeleteStrategy,
+    IncrementalConfig,
+    KeyCandidate,
+    PrimaryKeyDetector,
+    get_incremental_generator,
+    detect_primary_keys,
+    suggest_primary_keys,
+    validate_primary_keys,
+    analyze_key_columns,
+    get_composite_key_suggestions,
+)
+
 # Configure package-level logging
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
@@ -48,6 +64,19 @@ __all__ = [
     'validate_dataframe',
     'standardize_column_name',
     '__version__',
+    # Incremental load functionality
+    'LoadPattern',
+    'MergeStrategy',
+    'DeleteStrategy',
+    'IncrementalConfig',
+    'KeyCandidate',
+    'PrimaryKeyDetector',
+    'get_incremental_generator',
+    'detect_primary_keys',
+    'suggest_primary_keys',
+    'validate_primary_keys',
+    'analyze_key_columns',
+    'get_composite_key_suggestions',
 ]
 
 

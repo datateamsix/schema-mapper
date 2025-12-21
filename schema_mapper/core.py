@@ -56,6 +56,7 @@ class SchemaMapper:
         self.ddl_generator = get_ddl_generator(self.target_type)
         self.profiler = None
         self.preprocessor = None
+        self.incremental_generator = None  # Lazy-loaded when needed
         logger.info(f"Initialized SchemaMapper for {self.target_type}")
     
     def generate_schema(
@@ -357,5 +358,147 @@ class SchemaMapper:
         """Get list of supported platforms."""
         return SUPPORTED_PLATFORMS
     
+    def generate_incremental_ddl(
+        self,
+        df: pd.DataFrame,
+        table_name: str,
+        config,  # IncrementalConfig
+        dataset_name: Optional[str] = None,
+        project_id: Optional[str] = None,
+        **kwargs
+    ) -> str:
+        """
+        Generate incremental load DDL.
+
+        Generates platform-specific DDL for incremental load patterns like
+        UPSERT, SCD Type 2, CDC, etc.
+
+        Args:
+            df: DataFrame to load
+            table_name: Target table name
+            config: IncrementalConfig object specifying load pattern and options
+            dataset_name: Dataset/schema name
+            project_id: Project ID (BigQuery only)
+            **kwargs: Additional platform-specific arguments
+
+        Returns:
+            DDL statement(s) for incremental load
+
+        Example:
+            >>> from schema_mapper import SchemaMapper
+            >>> from schema_mapper.incremental import IncrementalConfig, LoadPattern
+            >>>
+            >>> mapper = SchemaMapper('bigquery')
+            >>> config = IncrementalConfig(
+            ...     load_pattern=LoadPattern.UPSERT,
+            ...     primary_keys=['user_id']
+            ... )
+            >>> ddl = mapper.generate_incremental_ddl(df, 'users', config)
+        """
+        # Generate schema first
+        schema, _ = self.generate_schema(df)
+
+        # Lazy-load incremental generator
+        if self.incremental_generator is None:
+            from .incremental import get_incremental_generator
+            self.incremental_generator = get_incremental_generator(self.target_type)
+
+        logger.info(f"Generating {config.load_pattern.value} DDL for {table_name}")
+
+        # Generate DDL
+        return self.incremental_generator.generate_incremental_ddl(
+            schema=schema,
+            table_name=table_name,
+            config=config,
+            dataset_name=dataset_name,
+            project_id=project_id,
+            **kwargs
+        )
+
+    def generate_merge_ddl(
+        self,
+        df: pd.DataFrame,
+        table_name: str,
+        primary_keys: List[str],
+        dataset_name: Optional[str] = None,
+        project_id: Optional[str] = None,
+        **kwargs
+    ) -> str:
+        """
+        Convenience method for generating MERGE (UPSERT) DDL.
+
+        This is a shortcut for the common UPSERT pattern without needing
+        to create a full IncrementalConfig object.
+
+        Args:
+            df: DataFrame to load
+            table_name: Target table name
+            primary_keys: List of primary key column names
+            dataset_name: Dataset/schema name
+            project_id: Project ID (BigQuery only)
+            **kwargs: Additional arguments passed to IncrementalConfig
+
+        Returns:
+            MERGE/UPSERT DDL statement
+
+        Example:
+            >>> mapper = SchemaMapper('bigquery')
+            >>> merge_ddl = mapper.generate_merge_ddl(
+            ...     df,
+            ...     'users',
+            ...     primary_keys=['user_id']
+            ... )
+        """
+        from .incremental import IncrementalConfig, LoadPattern
+
+        config = IncrementalConfig(
+            load_pattern=LoadPattern.UPSERT,
+            primary_keys=primary_keys,
+            **kwargs
+        )
+
+        return self.generate_incremental_ddl(
+            df, table_name, config, dataset_name, project_id
+        )
+
+    def detect_primary_keys(
+        self,
+        df: pd.DataFrame,
+        min_confidence: float = 0.7,
+        return_all_candidates: bool = False
+    ):
+        """
+        Automatically detect primary keys in DataFrame.
+
+        Args:
+            df: DataFrame to analyze
+            min_confidence: Minimum confidence threshold (0.0 to 1.0)
+            return_all_candidates: Return all candidates vs just best
+
+        Returns:
+            List of column names (if return_all_candidates=False)
+            List of KeyCandidate objects (if return_all_candidates=True)
+
+        Example:
+            >>> mapper = SchemaMapper('bigquery')
+            >>> keys = mapper.detect_primary_keys(df)
+            >>> print(f"Detected keys: {keys}")
+            Detected keys: ['user_id']
+
+            >>> # Get all candidates with confidence scores
+            >>> candidates = mapper.detect_primary_keys(df, return_all_candidates=True)
+            >>> for candidate in candidates:
+            ...     print(f"{candidate.columns}: {candidate.confidence:.2f} - {candidate.reasoning}")
+        """
+        from .incremental import PrimaryKeyDetector
+
+        detector = PrimaryKeyDetector(min_confidence=min_confidence)
+
+        if return_all_candidates:
+            return detector.detect_keys(df, suggest_composite=True)
+        else:
+            best = detector.auto_detect_best_key(df, suggest_composite=True)
+            return best.columns if best else []
+
     def __repr__(self) -> str:
         return f"SchemaMapper(target_type='{self.target_type}')"
