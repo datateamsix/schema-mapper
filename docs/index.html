@@ -36,19 +36,12 @@
             <div class="hero-content">
                 <h1><strong>Profile → Clean → Validate → Load</strong></h1>
                 <p class="hero-tagline"><strong>The complete Extract-Load toolkit for data engineers.</strong></p>
-                <p class="hero-subtitle">Profile your data, clean and validate it, then generate optimized schemas for any database—all in one powerful package. From messy CSVs to production-ready schemas in minutes.</p>
-                <div class="hero-feature-pills">
-                    <span class="feature-pill">🔍 Data Profiling <span class="pill-badge">NEW</span></span>
-                    <span class="feature-pill">🧹 Smart Preprocessing <span class="pill-badge">NEW</span></span>
-                    <span class="feature-pill">🎯 Schema Generation</span>
-                    <span class="feature-pill">⚡ DDL Optimization</span>
-                </div>
+                <p class="hero-subtitle">Profile your data, clean and validate it, then generate optimized schemas for any database—all in one powerful package.</p>
                 <div class="hero-badges">
                     <img src="https://badge.fury.io/py/schema-mapper.svg" alt="PyPI version">
                     <img src="https://img.shields.io/pypi/pyversions/schema-mapper.svg" alt="Python Support">
                     <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License">
                     <img src="https://img.shields.io/badge/Tests-111%2F111-brightgreen" alt="Tests">
-                    <img src="https://img.shields.io/pypi/dm/schema-mapper" alt="Downloads">
                 </div>
                 <div class="hero-install">
                     <div class="install-snippet">
@@ -57,9 +50,8 @@
                     </div>
                 </div>
                 <div class="hero-buttons">
-                    <a href="#installation" class="btn btn-primary"><i class="fas fa-rocket"></i> Get Started</a>
-                    <a href="#quickstart" class="btn btn-secondary"><i class="fas fa-code"></i> View Examples</a>
-                    <a href="https://github.com/datateamsix/schema-mapper" class="btn btn-tertiary"><i class="fab fa-github"></i> GitHub</a>
+                    <a href="#installation" class="btn btn-primary"><i class="fas fa-download"></i> Get Started</a>
+                    <a href="https://github.com/datateamsix/schema-mapper" class="btn btn-secondary"><i class="fab fa-github"></i> View on GitHub</a>
                 </div>
                 <div class="platform-icons">
                     <span class="platform-badge"><i class="fab fa-google"></i> BigQuery</span>
@@ -76,91 +68,51 @@
     <section class="how-it-works">
         <div class="container">
             <h2 class="section-title"><strong>How It Works</strong></h2>
-            <p class="section-subtitle">schema-mapper follows a proven Extract-Load pipeline</p>
-
-            <div class="pipeline-flow">
-                <div class="pipeline-step">
-                    <div class="step-icon">🔍</div>
-                    <h3>1. Profile</h3>
-                    <p class="step-desc">Understand data quality, detect anomalies, identify issues</p>
-                    <ul class="step-features">
-                        <li>Statistical analysis</li>
-                        <li>Quality scoring</li>
-                        <li>Anomaly detection</li>
-                        <li>Pattern recognition</li>
+            <p class="section-subtitle">A proven 4-stage Extract-Load pipeline</p>
+            <div class="use-case-grid-large">
+                <div class="use-case-card-large">
+                    <div class="use-case-icon"><i class="fas fa-chart-bar"></i></div>
+                    <h3>1. Profile Your Data</h3>
+                    <p>Understand data quality, detect anomalies, and identify issues before loading.</p>
+                    <ul class="benefit-list">
+                        <li><i class="fas fa-check-circle"></i> Statistical analysis beyond pandas describe()</li>
+                        <li><i class="fas fa-check-circle"></i> Automated quality scoring (0-100)</li>
+                        <li><i class="fas fa-check-circle"></i> Anomaly detection (IQR, Z-score, Isolation Forest)</li>
+                        <li><i class="fas fa-check-circle"></i> Pattern recognition (emails, phones, dates)</li>
                     </ul>
                 </div>
-
-                <div class="pipeline-arrow">→</div>
-
-                <div class="pipeline-step">
-                    <div class="step-icon">🧹</div>
-                    <h3>2. Clean</h3>
-                    <p class="step-desc">Standardize formats, fix errors, handle missing values</p>
-                    <ul class="step-features">
-                        <li>Format standardization</li>
-                        <li>Deduplication</li>
-                        <li>Missing value imputation</li>
-                        <li>Data validation</li>
+                <div class="use-case-card-large">
+                    <div class="use-case-icon"><i class="fas fa-broom"></i></div>
+                    <h3>2. Clean & Preprocess</h3>
+                    <p>Standardize formats, fix errors, handle missing values, and validate data.</p>
+                    <ul class="benefit-list">
+                        <li><i class="fas fa-check-circle"></i> Format standardization (dates, phones, currency)</li>
+                        <li><i class="fas fa-check-circle"></i> Smart deduplication (exact & fuzzy matching)</li>
+                        <li><i class="fas fa-check-circle"></i> Missing value imputation (multiple strategies)</li>
+                        <li><i class="fas fa-check-circle"></i> Email & phone validation with auto-correction</li>
                     </ul>
                 </div>
-
-                <div class="pipeline-arrow">→</div>
-
-                <div class="pipeline-step">
-                    <div class="step-icon">✅</div>
-                    <h3>3. Validate</h3>
-                    <p class="step-desc">Verify data integrity before loading</p>
-                    <ul class="step-features">
-                        <li>Email validation</li>
-                        <li>Phone verification</li>
-                        <li>Range checks</li>
-                        <li>Pattern matching</li>
+                <div class="use-case-card-large">
+                    <div class="use-case-icon"><i class="fas fa-sitemap"></i></div>
+                    <h3>3. Generate Schemas</h3>
+                    <p>Create optimized schemas with the right types, modes, and platform-specific features.</p>
+                    <ul class="benefit-list">
+                        <li><i class="fas fa-check-circle"></i> Automatic type detection (dates, numbers, booleans)</li>
+                        <li><i class="fas fa-check-circle"></i> SQL-compliant column naming</li>
+                        <li><i class="fas fa-check-circle"></i> REQUIRED vs NULLABLE inference</li>
+                        <li><i class="fas fa-check-circle"></i> Canonical schema → render to any platform</li>
                     </ul>
                 </div>
-
-                <div class="pipeline-arrow">→</div>
-
-                <div class="pipeline-step">
-                    <div class="step-icon">📦</div>
-                    <h3>4. Load</h3>
-                    <p class="step-desc">Generate optimized schemas and DDL</p>
-                    <ul class="step-features">
-                        <li>Schema generation</li>
-                        <li>DDL optimization</li>
-                        <li>Multi-platform export</li>
-                        <li>CLI commands</li>
+                <div class="use-case-card-large">
+                    <div class="use-case-icon"><i class="fas fa-rocket"></i></div>
+                    <h3>4. Load to Any Database</h3>
+                    <p>Export DDL, JSON schemas, or CLI commands ready for your target platform.</p>
+                    <ul class="benefit-list">
+                        <li><i class="fas fa-check-circle"></i> Production-ready CREATE TABLE statements</li>
+                        <li><i class="fas fa-check-circle"></i> Clustering, partitioning, distribution strategies</li>
+                        <li><i class="fas fa-check-circle"></i> Platform-specific optimizations</li>
+                        <li><i class="fas fa-check-circle"></i> BigQuery JSON schema export</li>
                     </ul>
-                </div>
-            </div>
-
-            <div class="why-approach">
-                <h3><i class="fas fa-lightbulb"></i> Why This Approach?</h3>
-                <div class="approach-grid">
-                    <div class="approach-card">
-                        <div class="approach-icon">🐼</div>
-                        <h4>Traditional: Pandas</h4>
-                        <p>Powerful but manual. You write every transformation.</p>
-                        <span class="approach-verdict downside">Time-consuming</span>
-                    </div>
-                    <div class="approach-card">
-                        <div class="approach-icon">🏭</div>
-                        <h4>Traditional: ETL Platforms</h4>
-                        <p>Complex, expensive, vendor lock-in.</p>
-                        <span class="approach-verdict downside">Overkill</span>
-                    </div>
-                    <div class="approach-card">
-                        <div class="approach-icon">🔧</div>
-                        <h4>Traditional: Schema Tools</h4>
-                        <p>Limited to one task. No profiling or cleaning.</p>
-                        <span class="approach-verdict downside">Incomplete</span>
-                    </div>
-                    <div class="approach-card highlight">
-                        <div class="approach-icon">✨</div>
-                        <h4>schema-mapper</h4>
-                        <p>Power of pandas + simplicity of purpose-built tools.</p>
-                        <span class="approach-verdict upside">Complete solution</span>
-                    </div>
                 </div>
             </div>
         </div>
@@ -334,67 +286,56 @@
     <!-- What's New Section -->
     <section class="whats-new">
         <div class="container">
-            <h2 class="section-title"><strong>🆕 What's New in v1.1.0</strong></h2>
+            <h2 class="section-title"><strong>What's New in v1.1.0</strong></h2>
             <p class="section-subtitle">schema-mapper has evolved from a schema generator into a complete Extract-Load toolkit</p>
 
-            <div class="whats-new-grid">
-                <div class="whats-new-card featured">
-                    <div class="new-badge-large">NEW</div>
-                    <div class="feature-icon-large">🔍</div>
+            <div class="use-case-grid-large">
+                <div class="use-case-card-large">
+                    <div class="use-case-icon"><i class="fas fa-chart-line"></i></div>
                     <h3>Data Profiling</h3>
-                    <p class="feature-lead">Go beyond basic validation with comprehensive data profiling</p>
-                    <ul class="feature-bullets">
-                        <li><strong>Quality Scoring:</strong> Get data quality scores (0-100) with completeness, validity, consistency metrics</li>
-                        <li><strong>Anomaly Detection:</strong> IQR, Z-score, and Isolation Forest methods for outlier identification</li>
-                        <li><strong>Pattern Recognition:</strong> Auto-detect emails, phones, URLs, dates, currency, SSNs</li>
-                        <li><strong>Correlation Analysis:</strong> Find relationships between features automatically</li>
-                        <li><strong>Built-in Visualizations:</strong> Distributions, correlations, missing values—no matplotlib imports!</li>
+                    <p>Go beyond basic validation with comprehensive data profiling and quality assessment.</p>
+                    <ul class="benefit-list">
+                        <li><i class="fas fa-check-circle"></i> Quality scores (0-100) with completeness & validity metrics</li>
+                        <li><i class="fas fa-check-circle"></i> Anomaly detection (IQR, Z-score, Isolation Forest)</li>
+                        <li><i class="fas fa-check-circle"></i> Auto-detect patterns (emails, phones, URLs, dates)</li>
+                        <li><i class="fas fa-check-circle"></i> Built-in visualizations—no matplotlib imports needed</li>
                     </ul>
-                    <div class="code-snippet-inline">
-                        <code>profiler = Profiler(df)<br>quality = profiler.assess_quality()<br>profiler.plot_distributions()</code>
-                    </div>
                 </div>
 
-                <div class="whats-new-card featured">
-                    <div class="new-badge-large">NEW</div>
-                    <div class="feature-icon-large">🧹</div>
+                <div class="use-case-card-large">
+                    <div class="use-case-icon"><i class="fas fa-magic"></i></div>
                     <h3>Intelligent Preprocessing</h3>
-                    <p class="feature-lead">Advanced data cleaning and transformation</p>
-                    <ul class="feature-bullets">
-                        <li><strong>Format Standardization:</strong> Dates, phone numbers, currencies, addresses</li>
-                        <li><strong>Smart Validation:</strong> Email/phone validation with auto-correction</li>
-                        <li><strong>Deduplication:</strong> Exact and fuzzy matching (threshold=0.8)</li>
-                        <li><strong>Missing Values:</strong> Multiple strategies (mean, median, KNN, predictive)</li>
-                        <li><strong>Encoding:</strong> One-hot, label, ordinal for categorical variables</li>
-                        <li><strong>Pipelines:</strong> Reproducible preprocessing workflows</li>
+                    <p>Advanced data cleaning and transformation with reproducible workflows.</p>
+                    <ul class="benefit-list">
+                        <li><i class="fas fa-check-circle"></i> Format standardization (dates, phones, currencies)</li>
+                        <li><i class="fas fa-check-circle"></i> Email/phone validation with auto-correction</li>
+                        <li><i class="fas fa-check-circle"></i> Fuzzy deduplication & missing value imputation</li>
+                        <li><i class="fas fa-check-circle"></i> Method chaining for fluent preprocessing pipelines</li>
                     </ul>
-                    <div class="code-snippet-inline">
-                        <code>df_clean = (PreProcessor(df)<br>    .fix_whitespace()<br>    .validate_emails('email', fix=True)<br>    .apply())</code>
-                    </div>
                 </div>
 
-                <div class="whats-new-card">
-                    <div class="feature-icon-large">📊</div>
-                    <h3>No More Import Hell</h3>
-                    <p>All visualizations work without importing matplotlib or seaborn. Just call <code>profiler.plot_distributions()</code> and you're done!</p>
-                </div>
-
-                <div class="whats-new-card">
-                    <div class="feature-icon-large">🔄</div>
+                <div class="use-case-card-large">
+                    <div class="use-case-icon"><i class="fas fa-code-branch"></i></div>
                     <h3>Reproducible Pipelines</h3>
-                    <p>Create reusable preprocessing workflows and apply them to multiple datasets with full transformation logging.</p>
+                    <p>Create reusable preprocessing workflows and apply them to multiple datasets.</p>
+                    <ul class="benefit-list">
+                        <li><i class="fas fa-check-circle"></i> Pipeline pattern for consistent preprocessing</li>
+                        <li><i class="fas fa-check-circle"></i> Full transformation logging & tracking</li>
+                        <li><i class="fas fa-check-circle"></i> Apply same pipeline to train/test/production data</li>
+                        <li><i class="fas fa-check-circle"></i> Version control your data transformations</li>
+                    </ul>
                 </div>
 
-                <div class="whats-new-card">
-                    <div class="feature-icon-large">✅</div>
+                <div class="use-case-card-large">
+                    <div class="use-case-icon"><i class="fas fa-shield-alt"></i></div>
                     <h3>Backward Compatible</h3>
-                    <p>All existing code continues to work exactly as before. New features are opt-in, so you can adopt them at your own pace.</p>
-                </div>
-
-                <div class="whats-new-card">
-                    <div class="feature-icon-large">🚀</div>
-                    <h3>Enhanced Integration</h3>
-                    <p>New <code>prepare_for_load()</code> parameters: <code>profile=True</code> and <code>preprocess_pipeline</code> for one-line ETL.</p>
+                    <p>All existing code continues to work. New features are opt-in and fully integrated.</p>
+                    <ul class="benefit-list">
+                        <li><i class="fas fa-check-circle"></i> Zero breaking changes to existing APIs</li>
+                        <li><i class="fas fa-check-circle"></i> Enhanced prepare_for_load() with profile parameter</li>
+                        <li><i class="fas fa-check-circle"></i> Optional dependencies—install only what you need</li>
+                        <li><i class="fas fa-check-circle"></i> Seamless integration with existing workflows</li>
+                    </ul>
                 </div>
             </div>
         </div>
@@ -462,176 +403,57 @@
     <!-- Features Section -->
     <section id="features" class="features">
         <div class="container">
-            <h2 class="section-title"><strong>Complete Feature Set</strong></h2>
-            <p class="section-subtitle">Everything you need from profiling to loading</p>
-
-            <!-- Feature Category Tabs -->
-            <div class="feature-tabs">
-                <button class="feature-tab active" data-category="profiling">
-                    <i class="fas fa-chart-bar"></i>
-                    <span>🔍 Profiling</span>
-                    <span class="tab-badge">NEW</span>
-                </button>
-                <button class="feature-tab" data-category="preprocessing">
-                    <i class="fas fa-broom"></i>
-                    <span>🧹 Preprocessing</span>
-                    <span class="tab-badge">NEW</span>
-                </button>
-                <button class="feature-tab" data-category="schema">
-                    <i class="fas fa-sitemap"></i>
-                    <span>🎯 Schema Generation</span>
-                </button>
-                <button class="feature-tab" data-category="optimization">
-                    <i class="fas fa-rocket"></i>
-                    <span>⚡ Optimization</span>
-                </button>
-            </div>
-
-            <!-- Profiling Features -->
-            <div class="feature-category active" id="category-profiling">
-                <h3 class="category-title">🔍 Data Profiling <span class="new-badge">NEW</span></h3>
-                <div class="features-grid">
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
-                        <h4>Statistical Analysis</h4>
-                        <p>Comprehensive stats beyond pandas describe() - skewness, kurtosis, distributions.</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="fas fa-star-half-alt"></i></div>
-                        <h4>Quality Scoring</h4>
-                        <p>Automated data quality assessment (0-100) with completeness, validity, consistency metrics.</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="fas fa-exclamation-triangle"></i></div>
-                        <h4>Anomaly Detection</h4>
-                        <p>Multiple methods: IQR, Z-score, Isolation Forest for outlier identification.</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="fas fa-search"></i></div>
-                        <h4>Pattern Recognition</h4>
-                        <p>Auto-detect emails, phones, URLs, IP addresses, dates, currency, SSNs.</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="fas fa-project-diagram"></i></div>
-                        <h4>Correlation Analysis</h4>
-                        <p>Find relationships between features with Pearson, Spearman, Kendall methods.</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="fas fa-chart-bar"></i></div>
-                        <h4>Visualizations</h4>
-                        <p>Built-in plots: distributions, correlations, missing values, outliers. No matplotlib imports!</p>
-                    </div>
+            <h2 class="section-title"><strong>Features</strong></h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
+                    <h3>Data Profiling</h3>
+                    <p>Statistical analysis, quality scoring, anomaly detection, and pattern recognition.</p>
                 </div>
-            </div>
-
-            <!-- Preprocessing Features -->
-            <div class="feature-category" id="category-preprocessing">
-                <h3 class="category-title">🧹 Data Preprocessing <span class="new-badge">NEW</span></h3>
-                <div class="features-grid">
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="fas fa-calendar-alt"></i></div>
-                        <h4>Format Standardization</h4>
-                        <p>Dates, phone numbers, currencies, addresses - auto-detect and standardize.</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="fas fa-envelope"></i></div>
-                        <h4>Smart Validation</h4>
-                        <p>Email, phone, zip code validation with auto-correction for common errors.</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="fas fa-eraser"></i></div>
-                        <h4>Intelligent Cleaning</h4>
-                        <p>Fix whitespace, case, special characters automatically. SQL-compliant naming.</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="fas fa-clone"></i></div>
-                        <h4>Deduplication</h4>
-                        <p>Exact and fuzzy matching to identify and remove duplicate records.</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="fas fa-fill-drip"></i></div>
-                        <h4>Missing Values</h4>
-                        <p>Multiple strategies: mean, median, mode, KNN, predictive imputation.</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="fas fa-tags"></i></div>
-                        <h4>Encoding</h4>
-                        <p>One-hot, label, and ordinal encoding for categorical variables.</p>
-                    </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-broom"></i></div>
+                    <h3>Data Preprocessing</h3>
+                    <p>Format standardization, validation, cleaning, deduplication, and missing value handling.</p>
                 </div>
-            </div>
-
-            <!-- Schema Generation Features -->
-            <div class="feature-category" id="category-schema">
-                <h3 class="category-title">🎯 Schema Generation</h3>
-                <div class="features-grid">
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="fas fa-network-wired"></i></div>
-                        <h4>Canonical Schema</h4>
-                        <p>Define once in a platform-agnostic format. Render to any database on demand.</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="fas fa-magic"></i></div>
-                        <h4>Type Detection</h4>
-                        <p>Automatically detect dates, numbers, booleans from string columns.</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="fas fa-brush"></i></div>
-                        <h4>Column Standardization</h4>
-                        <p>"User ID#" → user_id. Remove special chars, handle duplicates automatically.</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="fas fa-shield-alt"></i></div>
-                        <h4>NULL Handling</h4>
-                        <p>Automatically infer REQUIRED vs NULLABLE based on data distribution.</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="fas fa-file-code"></i></div>
-                        <h4>DDL Generation</h4>
-                        <p>Production-ready CREATE TABLE statements for all 5 platforms.</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="fas fa-file-alt"></i></div>
-                        <h4>JSON Schema</h4>
-                        <p>BigQuery JSON schema for bq CLI commands. Direct integration.</p>
-                    </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-network-wired"></i></div>
+                    <h3>Canonical Schema</h3>
+                    <p>Define once in a platform-agnostic format. Render to any database dialect on demand.</p>
                 </div>
-            </div>
-
-            <!-- Optimization Features -->
-            <div class="feature-category" id="category-optimization">
-                <h3 class="category-title">⚡ Performance Optimization</h3>
-                <div class="features-grid">
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="fas fa-layer-group"></i></div>
-                        <h4>Partitioning</h4>
-                        <p>Time-based, range, and hash partitioning strategies per platform.</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="fas fa-cubes"></i></div>
-                        <h4>Clustering</h4>
-                        <p>Auto-generate clustering on high-cardinality columns (BigQuery, Snowflake).</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="fas fa-server"></i></div>
-                        <h4>Distribution Keys</h4>
-                        <p>Redshift-specific distribution strategies: KEY, ALL, EVEN, AUTO.</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="fas fa-sort"></i></div>
-                        <h4>Sort Keys</h4>
-                        <p>Compound and interleaved sort keys for Redshift query optimization.</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="fas fa-terminal"></i></div>
-                        <h4>CLI Commands</h4>
-                        <p>Ready-to-execute create and load commands for each platform.</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="fas fa-code"></i></div>
-                        <h4>Python API</h4>
-                        <p>Fluent interface for scripts, notebooks, and automation workflows.</p>
-                    </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-magic"></i></div>
+                    <h3>Smart Type Detection</h3>
+                    <p>Automatically detect dates, numbers, booleans from string columns. No manual type casting.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-brush"></i></div>
+                    <h3>Column Standardization</h3>
+                    <p>Clean messy names: "User ID#" → user_id. Remove special chars, handle duplicates automatically.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-shield-alt"></i></div>
+                    <h3>Data Validation</h3>
+                    <p>Catch errors before load: empty DataFrames, duplicate columns, high NULL %, mixed types.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-file-code"></i></div>
+                    <h3>DDL Generation</h3>
+                    <p>Production-ready CREATE TABLE statements with comments, constraints, and optimization hints.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-bolt"></i></div>
+                    <h3>Performance Tuning</h3>
+                    <p>Auto-generate clustering, partitioning, sort keys, and distribution strategies per platform.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-file-alt"></i></div>
+                    <h3>JSON Schema Export</h3>
+                    <p>BigQuery-specific JSON schema for bq CLI load commands. Direct integration.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-terminal"></i></div>
+                    <h3>CLI & Python API</h3>
+                    <p>Use from command line or Python. Flexible for scripts, notebooks, or automation.</p>
                 </div>
             </div>
         </div>
@@ -670,103 +492,27 @@
     <section id="installation" class="installation">
         <div class="container">
             <h2 class="section-title"><strong>Installation</strong></h2>
-            <p class="section-subtitle">Choose your installation based on features needed</p>
-
-            <div class="install-grid-large">
-                <div class="install-card featured">
-                    <div class="install-icon"><i class="fas fa-rocket"></i></div>
-                    <h3>🎯 Recommended: Full Install</h3>
-                    <pre><code>pip install schema-mapper[all]</code></pre>
-                    <p class="install-note"><strong>Includes:</strong> Profiling, preprocessing, visualization, all platforms</p>
-                    <div class="install-includes">
-                        <span class="include-badge">✓ Profiling</span>
-                        <span class="include-badge">✓ Preprocessing</span>
-                        <span class="include-badge">✓ Visualization</span>
-                        <span class="include-badge">✓ All Platforms</span>
-                    </div>
-                </div>
-
+            <div class="install-grid">
                 <div class="install-card">
                     <div class="install-icon"><i class="fas fa-download"></i></div>
                     <h3>Basic Installation</h3>
                     <pre><code>pip install schema-mapper</code></pre>
-                    <p class="install-note">Core schema generation only</p>
+                    <p class="install-note">Core package only — no platform dependencies</p>
                 </div>
-
                 <div class="install-card">
-                    <div class="install-icon"><i class="fas fa-chart-bar"></i></div>
-                    <h3>🔍 With Profiling</h3>
-                    <pre><code>pip install schema-mapper[profiling]</code></pre>
-                    <p class="install-note">Statistical analysis + quality metrics</p>
-                </div>
-
-                <div class="install-card">
-                    <div class="install-icon"><i class="fas fa-broom"></i></div>
-                    <h3>🧹 With Preprocessing</h3>
-                    <pre><code>pip install schema-mapper[preprocessing]</code></pre>
-                    <p class="install-note">Data cleaning + validation</p>
-                </div>
-
-                <div class="install-card">
-                    <div class="install-icon"><i class="fas fa-chart-pie"></i></div>
-                    <h3>📊 With Visualization</h3>
-                    <pre><code>pip install schema-mapper[viz]</code></pre>
-                    <p class="install-note">Matplotlib + Seaborn plots</p>
-                </div>
-
-                <div class="install-card">
-                    <div class="install-icon"><i class="fas fa-database"></i></div>
+                    <div class="install-icon"><i class="fas fa-puzzle-piece"></i></div>
                     <h3>Platform-Specific</h3>
                     <pre><code>pip install schema-mapper[bigquery]
 pip install schema-mapper[snowflake]
 pip install schema-mapper[redshift]</code></pre>
-                    <p class="install-note">Add platform connectors</p>
+                    <p class="install-note">Install only what you need</p>
                 </div>
-            </div>
-
-            <div class="install-comparison">
-                <h3>📦 What's Included?</h3>
-                <table class="install-comparison-table">
-                    <thead>
-                        <tr>
-                            <th>Package</th>
-                            <th>Schema Generation</th>
-                            <th>Profiling</th>
-                            <th>Preprocessing</th>
-                            <th>Visualization</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><code>schema-mapper</code></td>
-                            <td><span class="supported"><i class="fas fa-check-circle"></i></span></td>
-                            <td><span class="not-supported"><i class="fas fa-times-circle"></i></span></td>
-                            <td><span class="not-supported"><i class="fas fa-times-circle"></i></span></td>
-                            <td><span class="not-supported"><i class="fas fa-times-circle"></i></span></td>
-                        </tr>
-                        <tr>
-                            <td><code>[profiling]</code></td>
-                            <td><span class="supported"><i class="fas fa-check-circle"></i></span></td>
-                            <td><span class="supported"><i class="fas fa-check-circle"></i></span></td>
-                            <td><span class="not-supported"><i class="fas fa-times-circle"></i></span></td>
-                            <td><span class="not-supported"><i class="fas fa-times-circle"></i></span></td>
-                        </tr>
-                        <tr>
-                            <td><code>[preprocessing]</code></td>
-                            <td><span class="supported"><i class="fas fa-check-circle"></i></span></td>
-                            <td><span class="not-supported"><i class="fas fa-times-circle"></i></span></td>
-                            <td><span class="supported"><i class="fas fa-check-circle"></i></span></td>
-                            <td><span class="not-supported"><i class="fas fa-times-circle"></i></span></td>
-                        </tr>
-                        <tr class="highlight-row">
-                            <td><code>[all]</code></td>
-                            <td><span class="supported"><i class="fas fa-check-circle"></i></span></td>
-                            <td><span class="supported"><i class="fas fa-check-circle"></i></span></td>
-                            <td><span class="supported"><i class="fas fa-check-circle"></i></span></td>
-                            <td><span class="supported"><i class="fas fa-check-circle"></i></span></td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="install-card">
+                    <div class="install-icon"><i class="fas fa-cubes"></i></div>
+                    <h3>All Features</h3>
+                    <pre><code>pip install schema-mapper[all]</code></pre>
+                    <p class="install-note">Everything included — profiling, preprocessing, visualization, all platforms</p>
+                </div>
             </div>
         </div>
     </section>
@@ -777,7 +523,7 @@ pip install schema-mapper[redshift]</code></pre>
             <h2 class="section-title"><strong>Quick Start</strong></h2>
             <p class="section-subtitle">From messy CSV to production-ready schema in minutes</p>
 
-            <h3 class="subsection-title"><i class="fas fa-stream"></i> 🆕 Complete Pipeline (Profile → Clean → Validate → Load)</h3>
+            <h3 class="subsection-title"><i class="fas fa-stream"></i> Complete Pipeline (Profile → Clean → Validate → Load)</h3>
             <div class="code-example">
                 <div class="code-header">
                     <span class="code-lang"><i class="fab fa-python"></i> Python</span>
@@ -789,47 +535,39 @@ import pandas as pd
 # Load your data
 df = pd.read_csv('customer_data.csv')
 
-# ─────────────────────────────────────────────────
-# 1️⃣ PROFILE: Understand your data
-# ─────────────────────────────────────────────────
+# Step 1: PROFILE - Understand your data
 profiler = Profiler(df)
 
 quality = profiler.assess_quality()
-print(f"🔍 Quality Score: {quality['overall_score']}/100")
+print(f"Quality Score: {quality['overall_score']}/100")
 
 anomalies = profiler.detect_anomalies()
-print(f"⚠️  Found {len(anomalies)} columns with outliers")
+print(f"Found {len(anomalies)} columns with outliers")
 
 # Visualize (no matplotlib imports needed!)
 profiler.plot_distributions()
 profiler.plot_correlations()
 
-# ─────────────────────────────────────────────────
-# 2️⃣ CLEAN: Preprocess and standardize
-# ─────────────────────────────────────────────────
+# Step 2: CLEAN - Preprocess and standardize
 preprocessor = PreProcessor(df)
 
 df_clean = (preprocessor
-    .fix_whitespace()                        # Remove extra spaces
-    .standardize_column_names()              # SQL-compliant names
-    .standardize_dates(['created_at'])       # Parse dates
-    .validate_emails('email', fix=True)      # Validate & auto-fix
-    .remove_duplicates(subset=['user_id'])   # Deduplicate
-    .handle_missing_values(strategy='auto')  # Smart imputation
-    .apply()                                 # Execute pipeline
+    .fix_whitespace()
+    .standardize_column_names()
+    .standardize_dates(['created_at'])
+    .validate_emails('email', fix=True)
+    .remove_duplicates(subset=['user_id'])
+    .handle_missing_values(strategy='auto')
+    .apply()
 )
 
-# ─────────────────────────────────────────────────
-# 3️⃣ GENERATE: Create optimized schema
-# ─────────────────────────────────────────────────
+# Step 3: GENERATE - Create optimized schema
 mapper = SchemaMapper('bigquery')
 
 schema, mapping = mapper.generate_schema(df_clean)
 ddl = mapper.generate_ddl(df_clean, 'customers', 'analytics', 'my-project')
 
-# ─────────────────────────────────────────────────
-# 4️⃣ EXPORT: Save artifacts
-# ─────────────────────────────────────────────────
+# Step 4: EXPORT - Save artifacts
 df_clean.to_csv('customers_clean.csv', index=False)
 
 with open('schema.json', 'w') as f:
@@ -838,10 +576,10 @@ with open('schema.json', 'w') as f:
 with open('create_table.sql', 'w') as f:
     f.write(ddl)
 
-print("✅ Ready to load!")</code></pre>
+print("Ready to load!")</code></pre>
             </div>
 
-            <h3 class="subsection-title"><i class="fas fa-zap"></i> Simple One-Liner (Still Works!)</h3>
+            <h3 class="subsection-title"><i class="fas fa-zap"></i> One-Line ETL Preparation</h3>
             <div class="code-example">
                 <div class="code-header">
                     <span class="code-lang"><i class="fab fa-python"></i> Python</span>
@@ -861,9 +599,9 @@ df_clean, schema, issues = prepare_for_load(
 
 # Check for issues
 if not issues['errors']:
-    print(f"✅ {len(schema)} columns prepared and ready to load!")
+    print(f"SUCCESS: {len(schema)} columns prepared and ready to load!")
 else:
-    print("❌ Fix these errors:", issues['errors'])</code></pre>
+    print("ERROR: Fix these errors:", issues['errors'])</code></pre>
             </div>
 
             <h3 class="subsection-title"><i class="fas fa-sitemap"></i> Canonical Schema → Multi-Platform</h3>
