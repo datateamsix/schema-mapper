@@ -680,13 +680,21 @@ section {
 .use-case-grid-four {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 2.5rem;
+    gap: 1.5rem;
     margin-top: 4rem;
 }
 
-@media (max-width: 1200px) {
+.use-case-grid-four .use-case-card-large {
+    padding: 2rem;
+}
+
+@media (max-width: 1400px) {
     .use-case-grid-four {
         grid-template-columns: repeat(2, 1fr);
+        gap: 2.5rem;
+    }
+    .use-case-grid-four .use-case-card-large {
+        padding: 2.5rem;
     }
 }
 
