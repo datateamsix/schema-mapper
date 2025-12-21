@@ -43,17 +43,19 @@ class SchemaMapper:
     def __init__(self, target_type: str = 'bigquery'):
         """
         Initialize the SchemaMapper.
-        
+
         Args:
-            target_type: Target platform ('bigquery', 'snowflake', 'redshift', 
+            target_type: Target platform ('bigquery', 'snowflake', 'redshift',
                         'sqlserver', 'postgresql')
-                        
+
         Raises:
             ValueError: If target_type is not supported
         """
         self.target_type = target_type.lower()
         self.type_map = get_type_mapping(self.target_type)
         self.ddl_generator = get_ddl_generator(self.target_type)
+        self.profiler = None
+        self.preprocessor = None
         logger.info(f"Initialized SchemaMapper for {self.target_type}")
     
     def generate_schema(
@@ -117,7 +119,123 @@ class SchemaMapper:
         
         logger.info(f"Generated schema with {len(schema)} fields")
         return schema, column_mapping
-    
+
+    def profile_data(
+        self,
+        df: pd.DataFrame,
+        detailed: bool = True,
+        show_progress: bool = True
+    ) -> Dict:
+        """
+        Profile DataFrame before schema generation.
+
+        Analyzes data quality, distributions, missing values, correlations,
+        and patterns to help understand the dataset before loading.
+
+        Args:
+            df: DataFrame to profile
+            detailed: Whether to generate detailed report (default: True)
+            show_progress: Whether to show progress bars (default: True)
+
+        Returns:
+            Dictionary with profiling results:
+            - If detailed=True: comprehensive report with all metrics
+            - If detailed=False: basic summary statistics only
+
+        Example:
+            >>> mapper = SchemaMapper('bigquery')
+            >>> report = mapper.profile_data(df)
+            >>> print(f"Quality Score: {report['quality']['overall_score']}/100")
+            >>>
+            >>> # Quick summary only
+            >>> summary = mapper.profile_data(df, detailed=False)
+        """
+        from .profiler import Profiler
+
+        logger.info(f"Profiling DataFrame with {len(df)} rows, {len(df.columns)} columns")
+        self.profiler = Profiler(df, name=self.target_type, show_progress=show_progress)
+
+        if detailed:
+            return self.profiler.generate_report(output_format='dict')
+        else:
+            return self.profiler.get_summary_stats().to_dict()
+
+    def preprocess_data(
+        self,
+        df: pd.DataFrame,
+        pipeline: Optional[List[str]] = None,
+        canonical_schema=None,
+        **kwargs
+    ) -> pd.DataFrame:
+        """
+        Preprocess DataFrame before schema generation.
+
+        Applies data cleaning and transformation operations to prepare
+        data for loading into the target platform.
+
+        Args:
+            df: DataFrame to preprocess
+            pipeline: List of preprocessing operations to apply.
+                     If None, applies default pipeline.
+                     Available operations: 'fix_whitespace', 'standardize_columns',
+                     'handle_missing', 'remove_duplicates', 'fix_types', etc.
+            canonical_schema: Optional CanonicalSchema with date format specifications
+            **kwargs: Additional arguments for preprocessing operations
+
+        Returns:
+            Preprocessed DataFrame
+
+        Example:
+            >>> mapper = SchemaMapper('bigquery')
+            >>>
+            >>> # Default preprocessing
+            >>> df_clean = mapper.preprocess_data(df)
+            >>>
+            >>> # Custom pipeline
+            >>> df_clean = mapper.preprocess_data(df, pipeline=[
+            ...     'fix_whitespace',
+            ...     'standardize_columns',
+            ...     'remove_duplicates',
+            ...     'handle_missing'
+            ... ])
+            >>>
+            >>> # With canonical schema for date formatting
+            >>> df_clean = mapper.preprocess_data(df, canonical_schema=schema)
+        """
+        from .preprocessor import PreProcessor
+
+        logger.info(f"Preprocessing DataFrame with {len(df)} rows, {len(df.columns)} columns")
+        self.preprocessor = PreProcessor(df, canonical_schema=canonical_schema)
+
+        if pipeline:
+            # Apply custom pipeline
+            for operation in pipeline:
+                if not hasattr(self.preprocessor, operation):
+                    logger.warning(f"Unknown preprocessing operation: {operation}")
+                    continue
+                # Call the operation method
+                method = getattr(self.preprocessor, operation)
+                self.preprocessor = method(**kwargs)
+
+            # Apply schema formats if canonical_schema provided
+            if canonical_schema:
+                logger.info("Applying date formats from canonical schema...")
+                self.preprocessor = self.preprocessor.apply_schema_formats()
+
+            return self.preprocessor.apply()
+        else:
+            # Default preprocessing pipeline
+            preprocessor = (self.preprocessor
+                           .fix_whitespace()
+                           .standardize_column_names())
+
+            # Apply schema formats if canonical_schema provided
+            if canonical_schema:
+                logger.info("Applying date formats from canonical schema...")
+                preprocessor = preprocessor.apply_schema_formats()
+
+            return preprocessor.apply()
+
     def prepare_dataframe(
         self,
         df: pd.DataFrame,

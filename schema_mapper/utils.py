@@ -3,12 +3,15 @@ Utility functions for schema mapping.
 
 This module provides helper functions for column name standardization,
 type detection, and data cleaning.
+
+Note: These functions maintain backward compatibility. For advanced preprocessing
+capabilities, see the PreProcessor class (when available).
 """
 
 import re
 import pandas as pd
 import numpy as np
-from typing import Dict
+from typing import Dict, Optional
 import logging
 
 logger = logging.getLogger(__name__)
@@ -64,39 +67,66 @@ def standardize_column_name(col_name: str) -> str:
     return col
 
 
-def detect_and_cast_types(df: pd.DataFrame) -> pd.DataFrame:
+def detect_and_cast_types(
+    df: pd.DataFrame,
+    use_profiler: bool = False,
+    profiler_insights: Optional[Dict] = None
+) -> pd.DataFrame:
     """
     Intelligently detect and cast DataFrame columns to optimal types.
-    
+
     Attempts to convert object columns to more specific types:
     - Datetime (if >50% of values can be parsed)
     - Numeric (if >90% of values are numeric)
     - Boolean (if column has ≤2 unique values matching bool patterns)
-    
+
     Args:
         df: Input DataFrame
-        
+        use_profiler: Whether to use Profiler for enhanced type detection (default: False)
+        profiler_insights: Pre-computed profiler patterns (optional, for performance)
+
     Returns:
         DataFrame with optimized types
-        
+
     Example:
         >>> import pandas as pd
         >>> df = pd.DataFrame({'dates': ['2024-01-01', '2024-01-02']})
         >>> df_typed = detect_and_cast_types(df)
         >>> df_typed.dtypes['dates']
         dtype('<M8[ns]')
+
+        >>> # Enhanced type detection with Profiler
+        >>> df_typed = detect_and_cast_types(df, use_profiler=True)
     """
     df_casted = df.copy()
-    
+
+    # Get pattern insights from Profiler if requested
+    patterns = profiler_insights
+    if use_profiler and patterns is None:
+        try:
+            from .profiler import Profiler
+            profiler = Profiler(df, name="type_detection")
+            patterns = profiler.detect_patterns()
+            logger.info("Using Profiler insights for enhanced type detection")
+        except Exception as e:
+            logger.warning(f"Could not use Profiler for type detection: {e}")
+            patterns = None
+
     for col in df_casted.columns:
         # Skip if already datetime
         if pd.api.types.is_datetime64_any_dtype(df_casted[col]):
             continue
-        
+
         # Try to infer better types for object columns
         if df_casted[col].dtype == 'object':
-            df_casted[col] = _cast_object_column(df_casted[col], col)
-    
+            # Use profiler patterns if available
+            if patterns and col in patterns['details']:
+                df_casted[col] = _cast_object_column_enhanced(
+                    df_casted[col], col, patterns['details'][col]
+                )
+            else:
+                df_casted[col] = _cast_object_column(df_casted[col], col)
+
     return df_casted
 
 
@@ -190,6 +220,47 @@ def _try_boolean_conversion(series: pd.Series, col_name: str) -> pd.Series:
         logger.debug(f"Column '{col_name}': Boolean conversion failed: {e}")
     
     return None
+
+
+def _cast_object_column_enhanced(
+    series: pd.Series,
+    col_name: str,
+    pattern_info: Dict
+) -> pd.Series:
+    """
+    Enhanced object column casting using Profiler pattern insights.
+
+    Args:
+        series: Series to cast
+        col_name: Column name for logging
+        pattern_info: Pattern detection results from Profiler
+
+    Returns:
+        Casted series
+    """
+    # Check if column is primarily a date string
+    if pattern_info.get('date_string', 0) > 70:
+        logger.info(f"Column '{col_name}': Detected as date string ({pattern_info['date_string']:.1f}%)")
+        try:
+            return pd.to_datetime(series, errors='coerce', format='mixed')
+        except:
+            pass
+
+    # Check if column is primarily numeric (currency or percentage)
+    if pattern_info.get('currency', 0) > 70:
+        logger.info(f"Column '{col_name}': Detected as currency ({pattern_info['currency']:.1f}%)")
+        # Remove currency symbols and convert
+        cleaned = series.str.replace(r'[$€£¥,\s]', '', regex=True)
+        return pd.to_numeric(cleaned, errors='coerce')
+
+    if pattern_info.get('percentage', 0) > 70:
+        logger.info(f"Column '{col_name}': Detected as percentage ({pattern_info['percentage']:.1f}%)")
+        # Remove % and convert
+        cleaned = series.str.replace(r'[%\s]', '', regex=True)
+        return pd.to_numeric(cleaned, errors='coerce') / 100
+
+    # Fall back to standard casting
+    return _cast_object_column(series, col_name)
 
 
 def infer_column_mode(series: pd.Series) -> str:

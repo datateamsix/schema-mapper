@@ -45,9 +45,49 @@ class ColumnDefinition:
     precision: Optional[int] = None   # For DECIMAL
     scale: Optional[int] = None       # For DECIMAL
 
+    # Date/Time format specifications (for DATE, TIMESTAMP, TIMESTAMPTZ)
+    date_format: Optional[str] = None  # e.g., '%Y-%m-%d', '%d/%m/%y %H:%M'
+    timezone: Optional[str] = None      # e.g., 'UTC', 'America/New_York'
+
     # Metadata
     original_name: Optional[str] = None  # Before standardization
     pandas_dtype: Optional[str] = None   # Original pandas dtype
+
+    def validate(self) -> List[str]:
+        """
+        Validate column definition consistency.
+
+        Returns:
+            List of error messages (empty if valid)
+        """
+        from datetime import datetime
+        errors = []
+
+        # Validate date_format for temporal types
+        if self.date_format:
+            if self.logical_type not in [LogicalType.DATE, LogicalType.TIMESTAMP, LogicalType.TIMESTAMPTZ]:
+                errors.append(
+                    f"Column '{self.name}': date_format specified but logical_type is "
+                    f"{self.logical_type.value}, not a temporal type"
+                )
+            else:
+                # Validate format string is valid
+                try:
+                    datetime.now().strftime(self.date_format)
+                except (ValueError, TypeError) as e:
+                    errors.append(f"Column '{self.name}': invalid date_format '{self.date_format}': {e}")
+
+        # Validate timezone for temporal types
+        if self.timezone:
+            if self.logical_type not in [LogicalType.TIMESTAMP, LogicalType.TIMESTAMPTZ]:
+                errors.append(
+                    f"Column '{self.name}': timezone specified but logical_type is "
+                    f"{self.logical_type.value}, not TIMESTAMP or TIMESTAMPTZ"
+                )
+            # Note: We don't validate timezone strings here since pytz/zoneinfo validation
+            # is complex and platform-dependent
+
+        return errors
 
     def __str__(self):
         """Human-readable representation."""
@@ -169,6 +209,11 @@ class CanonicalSchema:
         if len(col_names) != len(set(col_names)):
             duplicates = [name for name in col_names if col_names.count(name) > 1]
             errors.append(f"Duplicate column names: {set(duplicates)}")
+
+        # Validate each column definition
+        for col in self.columns:
+            col_errors = col.validate()
+            errors.extend(col_errors)
 
         # Validate optimization hints reference real columns
         if self.optimization:

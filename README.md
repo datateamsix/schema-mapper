@@ -19,7 +19,10 @@ Automatically generate schemas, DDL statements, and prepare your data for loadin
 - **Schema Generation**: JSON/DDL formats ready for CLI or API usage
 - **NULL Handling**: Automatically determines REQUIRED vs NULLABLE
 - **DDL Generation**: Platform-specific CREATE TABLE statements
-- **Table Optimization**: Clustering, partitioning, and distribution strategies (NEW!)
+- **Table Optimization**: Clustering, partitioning, and distribution strategies
+- **Data Profiling**: Comprehensive quality assessment, anomaly detection, pattern recognition (NEW!)
+- **Data Preprocessing**: Intelligent cleaning, transformation, and validation pipelines (NEW!)
+- **Canonical Schema Date Formats**: Define date formats once, apply everywhere (NEW!)
 - **High Performance**: Efficiently handles datasets from 1K to 1M+ rows
 
 ## Architecture
@@ -73,6 +76,153 @@ else:
     print("ERROR: Fix these errors:", issues['errors'])
 ```
 
+## Data Quality & Preprocessing (NEW!)
+
+### Profile Your Data
+
+```python
+from schema_mapper import SchemaMapper
+import pandas as pd
+
+df = pd.read_csv('messy_data.csv')
+mapper = SchemaMapper('bigquery')
+
+# Generate comprehensive data quality report
+report = mapper.profile_data(df, detailed=True)
+
+print(f"Overall Quality Score: {report['quality']['overall_score']}/100")
+print(f"Completeness: {report['quality']['completeness_score']:.1f}%")
+print(f"Missing Values: {report['missing_values']['total_missing_percentage']:.1f}%")
+print(f"Duplicates: {report['duplicates']['count']} rows")
+
+# Detect anomalies
+if report['anomalies']:
+    print("\nAnomalies detected:")
+    for col, info in report['anomalies'].items():
+        print(f"  {col}: {info['count']} outliers ({info['percentage']:.1f}%)")
+
+# Detect patterns (emails, phone numbers, URLs, etc.)
+if report['patterns']:
+    for col, patterns in report['patterns'].items():
+        print(f"\nPatterns in {col}:")
+        for pattern, pct in patterns.items():
+            print(f"  {pattern}: {pct:.1f}%")
+```
+
+### Clean and Transform Data
+
+```python
+from schema_mapper import SchemaMapper
+import pandas as pd
+
+df = pd.read_csv('messy_data.csv')
+mapper = SchemaMapper('bigquery')
+
+# Apply preprocessing pipeline
+df_clean = mapper.preprocess_data(
+    df,
+    pipeline=[
+        'fix_whitespace',           # Remove leading/trailing whitespace
+        'standardize_column_names', # Convert to snake_case
+        'remove_duplicates',        # Remove duplicate rows
+        'handle_missing',           # Handle missing values intelligently
+        'validate_emails',          # Validate email formats
+        'standardize_dates'         # Standardize date formats
+    ]
+)
+
+# Or use PreProcessor directly for fine-grained control
+from schema_mapper.preprocessor import PreProcessor
+
+preprocessor = PreProcessor(df)
+df_clean = (preprocessor
+    .fix_whitespace()
+    .standardize_column_names()
+    .validate_emails(columns=['email'])
+    .standardize_dates(columns=['created_at'], target_format='%Y-%m-%d')
+    .remove_duplicates()
+    .handle_missing(strategy='auto')
+    .apply())
+
+# Check transformation log
+print("Transformations applied:")
+for transform in preprocessor.transformation_log:
+    print(f"  - {transform}")
+```
+
+### Canonical Schema with Date Formats (Single Source of Truth)
+
+```python
+from schema_mapper.canonical import CanonicalSchema, ColumnDefinition, LogicalType
+from schema_mapper import prepare_for_load
+import pandas as pd
+
+# Define your schema with date formats ONCE
+schema = CanonicalSchema(
+    table_name='events',
+    columns=[
+        ColumnDefinition('event_id', LogicalType.BIGINT, nullable=False),
+        ColumnDefinition(
+            'event_date',
+            LogicalType.DATE,
+            date_format='%d/%m/%Y'  # European format - defined once!
+        ),
+        ColumnDefinition(
+            'created_at',
+            LogicalType.TIMESTAMP,
+            date_format='%d/%m/%Y %H:%M:%S',
+            timezone='UTC'
+        ),
+        ColumnDefinition('user_id', LogicalType.INTEGER),
+        ColumnDefinition('amount', LogicalType.DECIMAL, precision=10, scale=2)
+    ]
+)
+
+# Prepare data - date formats applied automatically!
+df_prepared, db_schema, issues = prepare_for_load(
+    df,
+    'bigquery',
+    canonical_schema=schema  # Date formats applied and validated!
+)
+
+# Benefits:
+# ✓ Define date format ONCE in canonical schema
+# ✓ Automatically applied during preprocessing
+# ✓ Automatically validated against data
+# ✓ No manual date formatting code needed
+```
+
+### Complete ETL with Profiling and Preprocessing
+
+```python
+from schema_mapper import prepare_for_load
+import pandas as pd
+
+df = pd.read_csv('messy_data.csv')
+
+# Profile, clean, validate, and generate schema in one call
+df_clean, schema, issues, report = prepare_for_load(
+    df,
+    'bigquery',
+    profile=True,  # Generate quality report
+    preprocess_pipeline=[
+        'fix_whitespace',
+        'standardize_column_names',
+        'remove_duplicates',
+        'handle_missing'
+    ],
+    validate=True
+)
+
+print(f"Data Quality Score: {report['quality']['overall_score']}/100")
+print(f"Cleaned {len(df) - len(df_clean)} rows")
+print(f"Generated schema with {len(schema)} columns")
+
+if not issues['errors']:
+    print("✓ Ready to load!")
+    # df_clean.to_gbq('dataset.table', project_id='my-project')
+```
+
 ## Usage Examples
 
 **Complete Example Scripts:**
@@ -81,6 +231,9 @@ else:
 - [production_analytics_pipeline.py](schema-mapper-pkg/examples/production_analytics_pipeline.py) - **Production use case with clustering & partitioning**
 - [ddl_with_clustering_examples.py](schema-mapper-pkg/examples/ddl_with_clustering_examples.py) - All platform optimization examples
 - [canonical_schema_usage.py](schema-mapper-pkg/examples/canonical_schema_usage.py) - **New renderer architecture** (canonical schema → multiple outputs)
+- [profiler_demo.py](schema-mapper-pkg/examples/profiler_demo.py) - **Data profiling and quality assessment** (NEW!)
+- [preprocessor_demo.py](schema-mapper-pkg/examples/preprocessor_demo.py) - **Data cleaning and transformation** (NEW!)
+- [canonical_schema_date_formats_demo.py](schema-mapper-pkg/examples/canonical_schema_date_formats_demo.py) - **Canonical schema with date formats** (NEW!)
 
 ### Generate Schema
 
@@ -351,6 +504,73 @@ mapper = SchemaMapper(target_type='bigquery')
 - `prepare_dataframe(df, ...)` - Clean and prepare DataFrame
 - `validate_dataframe(df, ...)` - Validate DataFrame quality
 - `generate_bigquery_schema_json(df, ...)` - Generate BigQuery JSON schema
+- `profile_data(df, detailed=True, show_progress=True)` - **NEW!** Generate data quality report
+- `preprocess_data(df, pipeline=None, canonical_schema=None)` - **NEW!** Clean and transform data
+
+### `Profiler` (NEW!)
+
+Comprehensive data profiling and quality assessment.
+
+```python
+from schema_mapper.profiler import Profiler
+
+profiler = Profiler(df, name='my_dataset')
+report = profiler.generate_report(output_format='dict')
+```
+
+**Methods:**
+- `profile_dataset()` - Profile entire dataset
+- `profile_column(col_name)` - Profile specific column
+- `assess_quality()` - Calculate quality scores
+- `detect_anomalies(method='iqr')` - Detect outliers
+- `detect_patterns()` - Detect emails, phones, URLs, etc.
+- `analyze_missing_values()` - Analyze missing data
+- `find_correlations()` - Find correlated columns
+- `analyze_distributions()` - Analyze data distributions
+- `generate_report(output_format='dict')` - Generate full report
+
+### `PreProcessor` (NEW!)
+
+Intelligent data cleaning and transformation.
+
+```python
+from schema_mapper.preprocessor import PreProcessor
+
+preprocessor = PreProcessor(df, canonical_schema=schema)
+df_clean = preprocessor.fix_whitespace().standardize_column_names().apply()
+```
+
+**Methods:**
+- `fix_whitespace(columns=None, strategy='trim')` - Remove whitespace
+- `standardize_column_names()` - Convert to snake_case
+- `standardize_dates(columns=None, target_format='ISO8601')` - Standardize dates
+- `validate_emails(columns)` - Validate email addresses
+- `validate_phone_numbers(columns)` - Validate phone numbers
+- `remove_duplicates(subset=None, keep='first')` - Remove duplicates
+- `handle_missing(strategy='auto', columns=None)` - Handle missing values
+- `one_hot_encode(columns, drop_original=True)` - One-hot encode categoricals
+- `apply_schema_formats()` - **NEW!** Apply formats from canonical schema
+- `create_pipeline(operations)` - Create preprocessing pipeline
+- `apply()` - Apply all transformations
+
+### `ColumnDefinition` (Enhanced)
+
+Define columns with format specifications.
+
+```python
+from schema_mapper.canonical import ColumnDefinition, LogicalType
+
+col = ColumnDefinition(
+    'event_date',
+    LogicalType.DATE,
+    date_format='%d/%m/%Y',  # NEW!
+    timezone='UTC'           # NEW!
+)
+```
+
+**New Fields:**
+- `date_format` - Python strptime format for temporal types
+- `timezone` - Timezone specification for timestamps
 
 ### `prepare_for_load()`
 
@@ -362,9 +582,17 @@ df_clean, schema, issues = prepare_for_load(
     target_type='bigquery',
     standardize_columns=True,
     auto_cast=True,
-    validate=True
+    validate=True,
+    profile=False,              # NEW! Generate quality report
+    preprocess_pipeline=None,   # NEW! Apply preprocessing
+    canonical_schema=None       # NEW! Use canonical schema for date formats
 )
 ```
+
+**New Parameters:**
+- `profile` - Set to `True` to generate data quality report (returns 4 values instead of 3)
+- `preprocess_pipeline` - List of preprocessing operations to apply (e.g., `['fix_whitespace', 'remove_duplicates']`)
+- `canonical_schema` - CanonicalSchema with date format specifications (formats applied automatically)
 
 ### `create_schema()`
 
@@ -451,6 +679,78 @@ print(df_typed.dtypes)
 | `Account Balance ($)` | `account_balance` |
 | `% Complete` | `complete` |
 | `123InvalidStart` | `_123invalidstart` |
+
+## Data Quality Features
+
+### Profiler Capabilities
+
+The `Profiler` class provides comprehensive data analysis:
+
+**Quality Assessment:**
+- Overall quality score (0-100)
+- Completeness, uniqueness, validity, consistency scores
+- Automated quality interpretation
+
+**Anomaly Detection:**
+- IQR (Interquartile Range) method
+- Z-score method
+- Isolation Forest method
+- Per-column outlier detection
+
+**Pattern Recognition:**
+- Email addresses
+- Phone numbers (US & international)
+- URLs
+- IP addresses
+- Credit card numbers
+- Social Security Numbers
+
+**Statistical Analysis:**
+- Missing value analysis
+- Cardinality analysis
+- Distribution analysis (skewness, kurtosis)
+- Correlation detection
+- Duplicate detection
+
+**Visualization Support:**
+- Distribution plots
+- Correlation heatmaps
+- Missing value visualizations
+- Outlier visualizations
+
+### PreProcessor Capabilities
+
+The `PreProcessor` class provides intelligent data cleaning:
+
+**Text Cleaning:**
+- Whitespace removal (trim, normalize)
+- Case standardization
+- Column name standardization (snake_case)
+- Special character handling
+
+**Data Standardization:**
+- Date format standardization (auto-detection)
+- Email validation and standardization
+- Phone number validation and standardization
+- URL normalization
+
+**Quality Improvement:**
+- Duplicate removal
+- Missing value handling (mean, median, mode, forward/backward fill, KNN imputation)
+- Outlier detection and handling
+- Type casting and conversion
+
+**Data Transformation:**
+- One-hot encoding
+- Label encoding
+- Binning and discretization
+- Custom transformations
+
+**Pipeline Features:**
+- Method chaining for fluent API
+- Transformation logging for reproducibility
+- Schema-aware processing
+- Custom pipeline creation
 
 ## Contributing
 
