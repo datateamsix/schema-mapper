@@ -727,120 +727,52 @@ ddl = generator.generate(
             <h2 class="section-title"><strong>Why schema-mapper?</strong></h2>
             <p class="section-subtitle">The only tool that combines profiling, cleaning, and schema generation</p>
 
-            <div class="table-responsive">
-                <table class="comparison-table-tools">
-                    <thead>
-                        <tr>
-                            <th>Capability</th>
-                            <th class="highlight-col"><strong>schema-mapper</strong></th>
-                            <th>Great Expectations</th>
-                            <th>dbt</th>
-                            <th>Pandas Profiling</th>
-                            <th>Trifacta</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>Data Profiling</strong></td>
-                            <td class="highlight-col"><span class="supported"><i class="fas fa-check-circle"></i> Built-in</span></td>
-                            <td><span class="supported"><i class="fas fa-check-circle"></i> Yes</span></td>
-                            <td><span class="not-supported"><i class="fas fa-times-circle"></i> No</span></td>
-                            <td><span class="supported"><i class="fas fa-check-circle"></i> Yes</span></td>
-                            <td><span class="supported"><i class="fas fa-check-circle"></i> Yes</span></td>
-                        </tr>
-                        <tr>
-                            <td><strong>Data Cleaning</strong></td>
-                            <td class="highlight-col"><span class="supported"><i class="fas fa-check-circle"></i> Built-in</span></td>
-                            <td><span class="partial"><i class="fas fa-minus-circle"></i> Limited</span></td>
-                            <td><span class="not-supported"><i class="fas fa-times-circle"></i> No</span></td>
-                            <td><span class="not-supported"><i class="fas fa-times-circle"></i> No</span></td>
-                            <td><span class="supported"><i class="fas fa-check-circle"></i> Yes</span></td>
-                        </tr>
-                        <tr>
-                            <td><strong>Schema Generation</strong></td>
-                            <td class="highlight-col"><span class="supported"><i class="fas fa-check-circle"></i> 5 Platforms</span></td>
-                            <td><span class="not-supported"><i class="fas fa-times-circle"></i> No</span></td>
-                            <td><span class="partial"><i class="fas fa-minus-circle"></i> Manual</span></td>
-                            <td><span class="not-supported"><i class="fas fa-times-circle"></i> No</span></td>
-                            <td><span class="partial"><i class="fas fa-minus-circle"></i> Limited</span></td>
-                        </tr>
-                        <tr>
-                            <td><strong>Validation Rules</strong></td>
-                            <td class="highlight-col"><span class="supported"><i class="fas fa-check-circle"></i> Built-in</span></td>
-                            <td><span class="supported"><i class="fas fa-check-circle"></i> Extensive</span></td>
-                            <td><span class="partial"><i class="fas fa-minus-circle"></i> Tests only</span></td>
-                            <td><span class="partial"><i class="fas fa-minus-circle"></i> Report only</span></td>
-                            <td><span class="supported"><i class="fas fa-check-circle"></i> Yes</span></td>
-                        </tr>
-                        <tr>
-                            <td><strong>DDL Optimization</strong></td>
-                            <td class="highlight-col"><span class="supported"><i class="fas fa-check-circle"></i> Clustering/Partitioning</span></td>
-                            <td><span class="not-supported"><i class="fas fa-times-circle"></i> No</span></td>
-                            <td><span class="partial"><i class="fas fa-minus-circle"></i> Via macros</span></td>
-                            <td><span class="not-supported"><i class="fas fa-times-circle"></i> No</span></td>
-                            <td><span class="not-supported"><i class="fas fa-times-circle"></i> No</span></td>
-                        </tr>
-                        <tr>
-                            <td><strong>CLI Tool</strong></td>
-                            <td class="highlight-col"><span class="supported"><i class="fas fa-check-circle"></i> Yes</span></td>
-                            <td><span class="supported"><i class="fas fa-check-circle"></i> Yes</span></td>
-                            <td><span class="supported"><i class="fas fa-check-circle"></i> Yes</span></td>
-                            <td><span class="supported"><i class="fas fa-check-circle"></i> Yes</span></td>
-                            <td><span class="not-supported"><i class="fas fa-times-circle"></i> GUI only</span></td>
-                        </tr>
-                        <tr>
-                            <td><strong>Pricing</strong></td>
-                            <td class="highlight-col"><span class="supported"><i class="fas fa-check-circle"></i> Free (MIT)</span></td>
-                            <td><span class="supported"><i class="fas fa-check-circle"></i> Free</span></td>
-                            <td><span class="supported"><i class="fas fa-check-circle"></i> Free</span></td>
-                            <td><span class="supported"><i class="fas fa-check-circle"></i> Free</span></td>
-                            <td><span class="not-supported"><i class="fas fa-dollar-sign"></i> Enterprise</span></td>
-                        </tr>
-                        <tr>
-                            <td><strong>Learning Curve</strong></td>
-                            <td class="highlight-col"><span class="supported"><i class="fas fa-check-circle"></i> Simple</span></td>
-                            <td><span class="partial"><i class="fas fa-minus-circle"></i> Medium</span></td>
-                            <td><span class="partial"><i class="fas fa-minus-circle"></i> Medium</span></td>
-                            <td><span class="supported"><i class="fas fa-check-circle"></i> Simple</span></td>
-                            <td><span class="not-supported"><i class="fas fa-times-circle"></i> Steep</span></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="comparison-summary">
-                <h3>When to Choose schema-mapper</h3>
-                <div class="comparison-cards">
-                    <div class="comparison-card">
-                        <div class="comparison-icon"><i class="fas fa-arrows-alt-h"></i></div>
-                        <h4>vs Great Expectations</h4>
-                        <p>You want profiling + cleaning + schema generation in one tool, not just validation.</p>
-                    </div>
-                    <div class="comparison-card">
-                        <div class="comparison-icon"><i class="fas fa-exchange-alt"></i></div>
-                        <h4>vs dbt</h4>
-                        <p>You need Extract-Load (data preparation) not Transform. Use both: schema-mapper for EL, dbt for T.</p>
-                    </div>
-                    <div class="comparison-card">
-                        <div class="comparison-icon"><i class="fas fa-tools"></i></div>
-                        <h4>vs Pandas Profiling</h4>
-                        <p>You need more than reports—you need cleaning, validation, and loading capabilities.</p>
-                    </div>
-                    <div class="comparison-card">
-                        <div class="comparison-icon"><i class="fas fa-code"></i></div>
-                        <h4>vs Trifacta</h4>
-                        <p>You want open-source, programmatic control, and multi-platform schema generation.</p>
-                    </div>
+            <div class="use-case-grid-large">
+                <div class="use-case-card-large">
+                    <div class="use-case-icon"><i class="fas fa-check-double"></i></div>
+                    <h3>vs Great Expectations</h3>
+                    <p>Great Expectations excels at validation, but schema-mapper adds profiling, cleaning, and multi-platform schema generation in one package.</p>
+                    <ul class="benefit-list">
+                        <li><i class="fas fa-check-circle"></i> Built-in data profiling & quality scoring</li>
+                        <li><i class="fas fa-check-circle"></i> Intelligent data cleaning & preprocessing</li>
+                        <li><i class="fas fa-check-circle"></i> Schema generation for 5 platforms</li>
+                        <li><i class="fas fa-check-circle"></i> Use together: schema-mapper for prep, GX for validation</li>
+                    </ul>
                 </div>
 
-                <div class="best-together">
-                    <h3><i class="fas fa-puzzle-piece"></i> Best Used Together</h3>
-                    <p>schema-mapper complements your existing stack:</p>
-                    <ul class="integration-list">
-                        <li><strong>dbt:</strong> Use schema-mapper for Extract-Load, then dbt for transformations (ELT pattern)</li>
-                        <li><strong>Airflow/Prefect:</strong> Integrate schema-mapper tasks into your orchestration pipelines</li>
-                        <li><strong>Jupyter:</strong> Profile and clean data interactively before analysis or modeling</li>
-                        <li><strong>Great Expectations:</strong> Use schema-mapper for preparation, GX for production validation</li>
+                <div class="use-case-card-large">
+                    <div class="use-case-icon"><i class="fas fa-exchange-alt"></i></div>
+                    <h3>vs dbt</h3>
+                    <p>dbt handles transformation (the "T" in ELT), while schema-mapper handles Extract-Load preparation. They complement each other perfectly.</p>
+                    <ul class="benefit-list">
+                        <li><i class="fas fa-check-circle"></i> Extract-Load focus vs Transform focus</li>
+                        <li><i class="fas fa-check-circle"></i> Profile & clean before transformation</li>
+                        <li><i class="fas fa-check-circle"></i> Generate optimized schemas automatically</li>
+                        <li><i class="fas fa-check-circle"></i> Use together: schema-mapper → dbt (ELT pattern)</li>
+                    </ul>
+                </div>
+
+                <div class="use-case-card-large">
+                    <div class="use-case-icon"><i class="fas fa-table"></i></div>
+                    <h3>vs Pandas Profiling</h3>
+                    <p>Pandas Profiling generates reports, but schema-mapper goes beyond reporting to actually clean, validate, and prepare data for loading.</p>
+                    <ul class="benefit-list">
+                        <li><i class="fas fa-check-circle"></i> Profiling plus actionable cleaning</li>
+                        <li><i class="fas fa-check-circle"></i> Data validation with auto-correction</li>
+                        <li><i class="fas fa-check-circle"></i> Schema generation for databases</li>
+                        <li><i class="fas fa-check-circle"></i> Production-ready DDL with optimizations</li>
+                    </ul>
+                </div>
+
+                <div class="use-case-card-large">
+                    <div class="use-case-icon"><i class="fas fa-code"></i></div>
+                    <h3>vs Trifacta / Commercial Tools</h3>
+                    <p>Commercial ETL tools work great but lock you in. schema-mapper gives you programmatic control, open source freedom, and multi-platform support.</p>
+                    <ul class="benefit-list">
+                        <li><i class="fas fa-check-circle"></i> Free & open source (MIT License)</li>
+                        <li><i class="fas fa-check-circle"></i> Programmatic Python API & CLI</li>
+                        <li><i class="fas fa-check-circle"></i> Version control your data workflows</li>
+                        <li><i class="fas fa-check-circle"></i> No vendor lock-in or licensing costs</li>
                     </ul>
                 </div>
             </div>
