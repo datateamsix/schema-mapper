@@ -500,5 +500,249 @@ class SchemaMapper:
             best = detector.auto_detect_best_key(df, suggest_composite=True)
             return best.columns if best else []
 
+    def generate_snowflake_copy_into(
+        self,
+        table_name: str,
+        stage_name: str,
+        df: Optional[pd.DataFrame] = None,
+        schema: Optional[Dict[str, str]] = None,
+        database_name: Optional[str] = None,
+        schema_name: Optional[str] = None,
+        **kwargs
+    ) -> str:
+        """
+        Generate Snowflake COPY INTO statement for loading from stage.
+
+        This is a Snowflake-specific helper for generating COPY INTO statements
+        to load data from Snowflake internal/external stages.
+
+        Args:
+            table_name: Target table name
+            stage_name: Snowflake stage name (e.g., '@my_stage/path/')
+            df: Optional DataFrame to infer schema from
+            schema: Optional explicit schema mapping (column_name -> data_type)
+            database_name: Optional database name
+            schema_name: Optional schema name
+            **kwargs: Additional options:
+                - file_format: File format name or type (default: 'CSV')
+                - pattern: File pattern to match (e.g., '.*\\.csv')
+                - on_error: Error handling ('ABORT_STATEMENT', 'CONTINUE', 'SKIP_FILE')
+                - Other COPY INTO options
+
+        Returns:
+            COPY INTO DDL statement
+
+        Raises:
+            ValueError: If target_type is not 'snowflake'
+
+        Example:
+            >>> mapper = SchemaMapper('snowflake')
+            >>> # Load CSV from stage
+            >>> copy_ddl = mapper.generate_snowflake_copy_into(
+            ...     table_name='users',
+            ...     stage_name='@my_s3_stage/users/',
+            ...     df=df,
+            ...     file_format='my_csv_format',
+            ...     pattern='.*users.*\\.csv',
+            ...     on_error='CONTINUE'
+            ... )
+            >>> print(copy_ddl)
+
+            >>> # With explicit schema
+            >>> copy_ddl = mapper.generate_snowflake_copy_into(
+            ...     table_name='users',
+            ...     stage_name='@my_stage/users/',
+            ...     schema={'user_id': 'NUMBER', 'name': 'VARCHAR', 'email': 'VARCHAR'}
+            ... )
+        """
+        if self.target_type != 'snowflake':
+            raise ValueError(
+                f"generate_snowflake_copy_into() only works with Snowflake mapper. "
+                f"Current target: {self.target_type}"
+            )
+
+        # Get schema from df if provided, otherwise use explicit schema
+        if schema is None and df is not None:
+            schema, _ = self.generate_schema(df)
+
+        # Lazy-load Snowflake generator
+        if self.incremental_generator is None:
+            from .incremental import get_incremental_generator
+            self.incremental_generator = get_incremental_generator('snowflake')
+
+        logger.info(f"Generating COPY INTO statement for {table_name} from {stage_name}")
+
+        return self.incremental_generator.generate_copy_into_ddl(
+            table_name=table_name,
+            stage_name=stage_name,
+            schema=schema,
+            database_name=database_name,
+            schema_name=schema_name,
+            **kwargs
+        )
+
+    def generate_redshift_copy_from_s3(
+        self,
+        table_name: str,
+        s3_path: str,
+        iam_role: str,
+        df: Optional[pd.DataFrame] = None,
+        schema: Optional[Dict[str, str]] = None,
+        dataset_name: Optional[str] = None,
+        file_format: str = 'CSV',
+        **kwargs
+    ) -> str:
+        """
+        Generate Redshift COPY command for loading from S3.
+
+        This is a Redshift-specific helper for generating COPY commands
+        to load data from Amazon S3.
+
+        Args:
+            table_name: Target table name
+            s3_path: S3 path (e.g., 's3://my-bucket/data/')
+            iam_role: IAM role ARN for authentication
+            df: Optional DataFrame to infer schema from
+            schema: Optional explicit schema mapping (column_name -> data_type)
+            dataset_name: Optional schema name
+            file_format: File format ('CSV', 'JSON', 'PARQUET', 'AVRO', 'ORC')
+            **kwargs: Additional COPY options:
+                - delimiter: Field delimiter for CSV (default: ',')
+                - region: AWS region (default: auto-detect)
+                - manifest: Use manifest file (default: False)
+                - compression: Compression type ('GZIP', 'BZIP2', 'ZSTD', 'LZO')
+                - ignore_header: Number of header rows to skip
+                - null_as: String to interpret as NULL
+                - dateformat: Date format string
+                - timeformat: Time format string
+                - Other COPY options
+
+        Returns:
+            COPY command DDL statement
+
+        Raises:
+            ValueError: If target_type is not 'redshift'
+
+        Example:
+            >>> mapper = SchemaMapper('redshift')
+            >>> # Load CSV from S3
+            >>> copy_ddl = mapper.generate_redshift_copy_from_s3(
+            ...     table_name='users',
+            ...     s3_path='s3://my-bucket/users/',
+            ...     iam_role='arn:aws:iam::123456789012:role/RedshiftCopyRole',
+            ...     df=df,
+            ...     file_format='CSV',
+            ...     delimiter='|',
+            ...     ignore_header=1
+            ... )
+            >>> print(copy_ddl)
+
+            >>> # Load Parquet with explicit schema
+            >>> copy_ddl = mapper.generate_redshift_copy_from_s3(
+            ...     table_name='events',
+            ...     s3_path='s3://my-bucket/events/',
+            ...     iam_role='arn:aws:iam::123456789012:role/RedshiftCopyRole',
+            ...     schema={'event_id': 'BIGINT', 'timestamp': 'TIMESTAMP', 'data': 'VARCHAR(MAX)'},
+            ...     file_format='PARQUET'
+            ... )
+        """
+        if self.target_type != 'redshift':
+            raise ValueError(
+                f"generate_redshift_copy_from_s3() only works with Redshift mapper. "
+                f"Current target: {self.target_type}"
+            )
+
+        # Get schema from df if provided, otherwise use explicit schema
+        if schema is None and df is not None:
+            schema, _ = self.generate_schema(df)
+
+        # Lazy-load Redshift generator
+        if self.incremental_generator is None:
+            from .incremental import get_incremental_generator
+            self.incremental_generator = get_incremental_generator('redshift')
+
+        logger.info(f"Generating COPY FROM S3 statement for {table_name} from {s3_path}")
+
+        return self.incremental_generator.generate_copy_from_s3_ddl(
+            table_name=table_name,
+            s3_path=s3_path,
+            iam_role=iam_role,
+            schema=schema,
+            dataset_name=dataset_name,
+            file_format=file_format,
+            **kwargs
+        )
+
+    def generate_redshift_maintenance(
+        self,
+        table_name: str,
+        dataset_name: Optional[str] = None,
+        vacuum_type: str = 'FULL',
+        analyze: bool = True,
+        **kwargs
+    ) -> str:
+        """
+        Generate Redshift VACUUM and ANALYZE maintenance commands.
+
+        This is a Redshift-specific helper for generating table maintenance
+        commands to reclaim space and update statistics.
+
+        Args:
+            table_name: Target table name
+            dataset_name: Optional schema name
+            vacuum_type: Type of vacuum operation:
+                - 'FULL': Full vacuum (sort and reclaim space)
+                - 'DELETE ONLY': Reclaim space only
+                - 'SORT ONLY': Sort rows only
+                - 'REINDEX': Rebuild indexes
+            analyze: Whether to include ANALYZE command (default: True)
+            **kwargs: Additional options (reserved for future use)
+
+        Returns:
+            VACUUM and ANALYZE DDL statements
+
+        Raises:
+            ValueError: If target_type is not 'redshift'
+
+        Example:
+            >>> mapper = SchemaMapper('redshift')
+            >>> # Full vacuum and analyze
+            >>> maint_ddl = mapper.generate_redshift_maintenance(
+            ...     table_name='users',
+            ...     vacuum_type='FULL'
+            ... )
+            >>> print(maint_ddl)
+            VACUUM FULL users;
+            ANALYZE users;
+
+            >>> # Delete-only vacuum without analyze
+            >>> maint_ddl = mapper.generate_redshift_maintenance(
+            ...     table_name='events',
+            ...     dataset_name='staging',
+            ...     vacuum_type='DELETE ONLY',
+            ...     analyze=False
+            ... )
+        """
+        if self.target_type != 'redshift':
+            raise ValueError(
+                f"generate_redshift_maintenance() only works with Redshift mapper. "
+                f"Current target: {self.target_type}"
+            )
+
+        # Lazy-load Redshift generator
+        if self.incremental_generator is None:
+            from .incremental import get_incremental_generator
+            self.incremental_generator = get_incremental_generator('redshift')
+
+        logger.info(f"Generating maintenance commands for {table_name}")
+
+        return self.incremental_generator.generate_vacuum_analyze_commands(
+            table_name=table_name,
+            dataset_name=dataset_name,
+            vacuum_type=vacuum_type,
+            analyze=analyze,
+            **kwargs
+        )
+
     def __repr__(self) -> str:
         return f"SchemaMapper(target_type='{self.target_type}')"

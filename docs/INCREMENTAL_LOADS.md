@@ -709,15 +709,304 @@ ddl = mapper.generate_merge_ddl(
 )
 ```
 
+### Snowflake Incremental Loads
+
+Snowflake has full support for all incremental load patterns with transaction support, TRANSIENT tables, and COPY INTO for stage-based loading.
+
+#### Basic UPSERT (Merge) with Transactions
+
+```python
+from schema_mapper import SchemaMapper, IncrementalConfig, LoadPattern
+
+mapper = SchemaMapper('snowflake')
+
+config = IncrementalConfig(
+    load_pattern=LoadPattern.UPSERT,
+    primary_keys=['user_id']
+)
+
+ddl = mapper.generate_incremental_ddl(
+    df,
+    'users',
+    config,
+    database_name='analytics',
+    schema_name='public'
+)
+
+print(ddl)
+```
+
+**Output:**
+```sql
+BEGIN TRANSACTION;
+
+MERGE INTO analytics.public.users AS target
+USING analytics.public.users_staging AS source
+ON target.user_id = source.user_id
+WHEN MATCHED THEN
+  UPDATE SET name = source.name, email = source.email, updated_at = source.updated_at
+WHEN NOT MATCHED THEN
+  INSERT (user_id, name, email, updated_at)
+  VALUES (source.user_id, source.name, source.email, source.updated_at);
+
+COMMIT;
+```
+
+#### SCD Type 2 (Historical Tracking)
+
+```python
+config = IncrementalConfig(
+    load_pattern=LoadPattern.SCD_TYPE2,
+    primary_keys=['customer_id'],
+    hash_columns=['name', 'email', 'address'],
+    effective_date_column='effective_from',
+    expiration_date_column='effective_to',
+    is_current_column='is_current'
+)
+
+ddl = mapper.generate_incremental_ddl(
+    df,
+    'dim_customers',
+    config,
+    database_name='analytics',
+    schema_name='dimensions'
+)
+```
+
+**Output:**
+```sql
+BEGIN TRANSACTION;
+
+-- Step 1: Expire changed records
+UPDATE analytics.dimensions.dim_customers AS target
+SET effective_to = CURRENT_TIMESTAMP(),
+    is_current = FALSE
+FROM analytics.dimensions.dim_customers_staging AS source
+WHERE target.customer_id = source.customer_id
+  AND target.is_current = TRUE
+  AND HASH(target.name, target.email, target.address) != (
+    SELECT HASH(sub.name, sub.email, sub.address)
+    FROM analytics.dimensions.dim_customers AS sub
+    WHERE sub.customer_id = target.customer_id
+      AND sub.is_current = TRUE
+    LIMIT 1
+  );
+
+-- Step 2: Insert new versions for changed records
+INSERT INTO analytics.dimensions.dim_customers (customer_id, name, email, address, effective_from, effective_to, is_current)
+SELECT
+  source.customer_id, source.name, source.email, source.address,
+  CURRENT_TIMESTAMP() AS effective_from,
+  '9999-12-31'::TIMESTAMP AS effective_to,
+  TRUE AS is_current
+FROM analytics.dimensions.dim_customers_staging AS source
+WHERE EXISTS (
+  SELECT 1
+  FROM analytics.dimensions.dim_customers AS target
+  WHERE target.customer_id = source.customer_id
+    AND target.effective_to = CURRENT_TIMESTAMP()
+);
+
+-- Step 3: Insert completely new records
+INSERT INTO analytics.dimensions.dim_customers (customer_id, name, email, address, effective_from, effective_to, is_current)
+SELECT
+  source.customer_id, source.name, source.email, source.address,
+  CURRENT_TIMESTAMP() AS effective_from,
+  '9999-12-31'::TIMESTAMP AS effective_to,
+  TRUE AS is_current
+FROM analytics.dimensions.dim_customers_staging AS source
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM analytics.dimensions.dim_customers AS target
+  WHERE target.customer_id = source.customer_id
+);
+
+COMMIT;
+```
+
+#### Incremental Timestamp Load with Session Variables
+
+```python
+config = IncrementalConfig(
+    load_pattern=LoadPattern.INCREMENTAL_TIMESTAMP,
+    primary_keys=['event_id'],
+    incremental_column='event_timestamp',
+    lookback_window='2 hours'  # Safety margin
+)
+
+ddl = mapper.generate_incremental_ddl(
+    df,
+    'events',
+    config,
+    database_name='analytics',
+    schema_name='raw'
+)
+```
+
+**Output:**
+```sql
+-- Get max timestamp from target
+SET max_ts = (
+  SELECT NVL(MAX(event_timestamp), '1900-01-01'::TIMESTAMP)
+  FROM analytics.raw.events
+);
+
+-- Insert new records
+INSERT INTO analytics.raw.events (event_id, user_id, event_type, event_timestamp)
+SELECT event_id, user_id, event_type, event_timestamp
+FROM (SELECT * FROM events_source) AS source
+WHERE source.event_timestamp > $max_ts - INTERVAL '2 hours';
+```
+
+#### CDC (Change Data Capture) with DELETE Support
+
+```python
+config = IncrementalConfig(
+    load_pattern=LoadPattern.CDC_MERGE,
+    primary_keys=['user_id'],
+    operation_column='_op',  # I/U/D indicator
+    sequence_column='_seq'
+)
+
+ddl = mapper.generate_incremental_ddl(
+    df,
+    'users',
+    config,
+    database_name='analytics',
+    schema_name='public'
+)
+```
+
+**Output:**
+```sql
+BEGIN TRANSACTION;
+
+MERGE INTO analytics.public.users AS target
+USING analytics.public.users_staging AS source
+ON target.user_id = source.user_id
+WHEN MATCHED AND source._op = 'D' THEN
+  DELETE
+WHEN MATCHED AND source._op IN ('U', 'I') THEN
+  UPDATE SET name = source.name, email = source.email
+WHEN NOT MATCHED AND source._op IN ('I', 'U') THEN
+  INSERT (user_id, name, email)
+  VALUES (source.user_id, source.name, source.email);
+
+COMMIT;
+```
+
+#### TRANSIENT Staging Table Creation
+
+```python
+from schema_mapper.incremental import get_incremental_generator
+
+generator = get_incremental_generator('snowflake')
+schema, _ = mapper.generate_schema(df)
+
+staging_ddl = generator.generate_staging_table_ddl(
+    schema,
+    'users',
+    database_name='analytics',
+    schema_name='staging',
+    transient=True,
+    cluster_by=['user_id', 'created_at']
+)
+
+print(staging_ddl)
+```
+
+**Output:**
+```sql
+CREATE OR REPLACE TRANSIENT TABLE analytics.staging.users_staging (
+  user_id NUMBER,
+  name VARCHAR,
+  email VARCHAR,
+  created_at TIMESTAMP
+)
+CLUSTER BY (user_id, created_at);
+```
+
+#### COPY INTO for Stage-Based Loading
+
+```python
+# Snowflake-specific helper for loading from stages
+ddl = mapper.generate_snowflake_copy_into(
+    table_name='users',
+    stage_name='@s3_stage/users/',
+    df=df,
+    database_name='analytics',
+    schema_name='raw',
+    file_format='my_csv_format',
+    pattern='.*users.*\\.csv',
+    on_error='CONTINUE'
+)
+
+print(ddl)
+```
+
+**Output:**
+```sql
+COPY INTO analytics.raw.users
+  (user_id, name, email, created_at)
+FROM @s3_stage/users/
+FILE_FORMAT = (TYPE = 'my_csv_format')
+PATTERN = '.*users.*\.csv'
+ON_ERROR = 'CONTINUE';
+```
+
+#### Full Refresh with TRUNCATE + INSERT
+
+```python
+config = IncrementalConfig(
+    load_pattern=LoadPattern.FULL_REFRESH,
+    primary_keys=[]
+)
+
+ddl = mapper.generate_incremental_ddl(
+    df,
+    'dim_dates',
+    config,
+    database_name='analytics',
+    schema_name='dimensions',
+    use_create_or_replace=False  # Use TRUNCATE approach
+)
+```
+
+**Output:**
+```sql
+BEGIN TRANSACTION;
+
+TRUNCATE TABLE analytics.dimensions.dim_dates;
+
+INSERT INTO analytics.dimensions.dim_dates (date_id, date, year, month, day)
+SELECT date_id, date, year, month, day
+FROM analytics.dimensions.dim_dates_staging;
+
+COMMIT;
+```
+
+#### Convenience Method for MERGE
+
+```python
+# Shortcut method for common UPSERT pattern
+ddl = mapper.generate_merge_ddl(
+    df,
+    'users',
+    primary_keys=['user_id'],
+    database_name='analytics',
+    schema_name='public'
+)
+```
+
 ## What's Next?
 
-This documentation covers PROMPT 1-3:
+This documentation covers PROMPT 1-4:
 - ✅ PROMPT 1: Architecture & Core Abstractions
 - ✅ PROMPT 2: Primary Key Detection
 - ✅ PROMPT 3: BigQuery Implementation
+- ✅ PROMPT 4: Snowflake Implementation
 
 **Coming in future prompts**:
-- PROMPT 4: Snowflake implementation
 - PROMPT 5: Redshift implementation (DELETE+INSERT pattern)
 - PROMPT 6: SQL Server implementation
 - PROMPT 7: PostgreSQL implementation (ON CONFLICT)
