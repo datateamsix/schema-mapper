@@ -998,17 +998,390 @@ ddl = mapper.generate_merge_ddl(
 )
 ```
 
+### SQL Server Incremental Loads
+
+SQL Server has full support for all incremental load patterns using T-SQL MERGE statements with transaction support, OUTPUT clause for auditing, and BULK INSERT for file loading.
+
+#### Basic UPSERT (Merge) with Transactions
+
+```python
+from schema_mapper import SchemaMapper, IncrementalConfig, LoadPattern
+
+mapper = SchemaMapper('sqlserver')
+
+config = IncrementalConfig(
+    load_pattern=LoadPattern.UPSERT,
+    primary_keys=['user_id']
+)
+
+ddl = mapper.generate_incremental_ddl(
+    df,
+    'users',
+    config,
+    dataset_name='dbo',
+    database_name='Analytics'
+)
+
+print(ddl)
+```
+
+**Output:**
+```sql
+BEGIN TRANSACTION;
+
+MERGE INTO [Analytics].[dbo].[users] AS target
+USING [Analytics].[dbo].[users_staging] AS source
+ON target.[user_id] = source.[user_id]
+WHEN MATCHED
+ THEN
+  UPDATE SET
+    target.[name] = source.[name],
+    target.[email] = source.[email],
+    target.[updated_at] = source.[updated_at]
+WHEN NOT MATCHED BY TARGET THEN
+  INSERT (
+    [user_id],
+    [name],
+    [email],
+    [updated_at],
+    [created_at]
+  )
+  VALUES (
+    source.[user_id],
+    source.[name],
+    source.[email],
+    source.[updated_at],
+    GETDATE()
+  )
+;
+
+COMMIT TRANSACTION;
+```
+
+#### SCD Type 2 with MERGE Approach
+
+```python
+config = IncrementalConfig(
+    load_pattern=LoadPattern.SCD_TYPE2,
+    primary_keys=['customer_id'],
+    hash_columns=['name', 'email', 'address'],
+    effective_date_column='valid_from',
+    expiration_date_column='valid_to',
+    is_current_column='is_current'
+)
+
+ddl = mapper.generate_incremental_ddl(
+    df,
+    'dim_customers',
+    config,
+    dataset_name='dim',
+    database_name='Analytics'
+)
+```
+
+**Output:**
+```sql
+-- SCD Type 2: Maintain historical versions
+BEGIN TRANSACTION;
+
+MERGE INTO [Analytics].[dim].[dim_customers] AS target
+USING [Analytics].[dim].[dim_customers_staging] AS source
+ON target.[customer_id] = source.[customer_id]
+   AND target.[is_current] = 1
+WHEN MATCHED AND (
+  ISNULL(CAST(target.[name] AS NVARCHAR(MAX)), 'NULL_SENTINEL') != ISNULL(CAST(source.[name] AS NVARCHAR(MAX)), 'NULL_SENTINEL') OR
+  ISNULL(CAST(target.[email] AS NVARCHAR(MAX)), 'NULL_SENTINEL') != ISNULL(CAST(source.[email] AS NVARCHAR(MAX)), 'NULL_SENTINEL') OR
+  ISNULL(CAST(target.[address] AS NVARCHAR(MAX)), 'NULL_SENTINEL') != ISNULL(CAST(source.[address] AS NVARCHAR(MAX)), 'NULL_SENTINEL')
+) THEN
+  UPDATE SET
+    target.[valid_to] = CAST(GETDATE() AS DATE),
+    target.[is_current] = 0
+WHEN NOT MATCHED BY TARGET THEN
+  INSERT (
+    [customer_id],
+    [name],
+    [email],
+    [address],
+    [valid_from],
+    [valid_to],
+    [is_current]
+  )
+  VALUES (
+    source.[customer_id],
+    source.[name],
+    source.[email],
+    source.[address],
+    CAST(GETDATE() AS DATE),
+    CAST('9999-12-31' AS DATE),
+    1
+  );
+
+-- Insert new versions of changed records
+INSERT INTO [Analytics].[dim].[dim_customers] (
+  [customer_id],
+  [name],
+  [email],
+  [address],
+  [valid_from],
+  [valid_to],
+  [is_current]
+)
+SELECT
+  source.[customer_id],
+  source.[name],
+  source.[email],
+  source.[address],
+  CAST(GETDATE() AS DATE) AS [valid_from],
+  CAST('9999-12-31' AS DATE) AS [valid_to],
+  1 AS [is_current]
+FROM [Analytics].[dim].[dim_customers_staging] AS source
+INNER JOIN [Analytics].[dim].[dim_customers] AS target
+  ON target.[customer_id] = source.[customer_id]
+WHERE target.[is_current] = 0
+  AND target.[valid_to] = CAST(GETDATE() AS DATE);
+
+COMMIT TRANSACTION;
+```
+
+#### Incremental Timestamp Load with DATEADD
+
+```python
+config = IncrementalConfig(
+    load_pattern=LoadPattern.INCREMENTAL_TIMESTAMP,
+    primary_keys=['event_id'],
+    incremental_column='event_timestamp',
+    lookback_window='2 hours'  # Safety margin
+)
+
+ddl = mapper.generate_incremental_ddl(
+    df,
+    'events',
+    config,
+    dataset_name='dbo'
+)
+```
+
+**Output:**
+```sql
+-- Incremental load based on [event_timestamp]
+BEGIN TRANSACTION;
+
+-- Get max timestamp from target
+DECLARE @max_ts DATETIME;
+SELECT @max_ts = ISNULL(MAX([event_timestamp]), '1970-01-01')
+FROM [dbo].[events];
+
+-- Load only new records
+INSERT INTO [dbo].[events] (
+  [event_id],
+  [user_id],
+  [event_type],
+  [event_timestamp]
+)
+SELECT
+  [event_id],
+  [user_id],
+  [event_type],
+  [event_timestamp]
+FROM [dbo].[events_staging]
+WHERE [event_timestamp] > DATEADD(HOUR, -2, @max_ts)
+;
+
+COMMIT TRANSACTION;
+```
+
+#### CDC (Change Data Capture) with Single MERGE
+
+```python
+config = IncrementalConfig(
+    load_pattern=LoadPattern.CDC_MERGE,
+    primary_keys=['user_id'],
+    operation_column='_op',  # I/U/D indicator
+    delete_strategy=DeleteStrategy.HARD_DELETE
+)
+
+ddl = mapper.generate_incremental_ddl(
+    df,
+    'users',
+    config,
+    dataset_name='dbo'
+)
+```
+
+**Output:**
+```sql
+-- CDC Merge: Handle Insert/Update/Delete operations
+BEGIN TRANSACTION;
+
+MERGE INTO [dbo].[users] AS target
+USING [dbo].[users_staging] AS source
+ON target.[user_id] = source.[user_id]
+WHEN MATCHED AND source.[_op] = 'D' THEN
+  DELETE
+WHEN MATCHED AND source.[_op] = 'U' THEN
+  UPDATE SET
+    target.[name] = source.[name],
+    target.[email] = source.[email],
+    target.[_timestamp] = source.[_timestamp]
+WHEN NOT MATCHED BY TARGET AND source.[_op] = 'I' THEN
+  INSERT (
+    [user_id],
+    [name],
+    [email],
+    [_timestamp]
+  )
+  VALUES (
+    source.[user_id],
+    source.[name],
+    source.[email],
+    source.[_timestamp]
+  );
+
+COMMIT TRANSACTION;
+```
+
+#### MERGE with OUTPUT Clause for Auditing
+
+```python
+from schema_mapper.incremental import get_incremental_generator
+
+generator = get_incremental_generator('sqlserver')
+schema, _ = mapper.generate_schema(df)
+
+config = IncrementalConfig(
+    load_pattern=LoadPattern.UPSERT,
+    primary_keys=['user_id']
+)
+
+ddl = generator.generate_merge_ddl(
+    schema,
+    'users',
+    config,
+    dataset_name='dbo',
+    capture_output=True  # Enable OUTPUT clause
+)
+
+print(ddl)
+```
+
+**Output:**
+```sql
+MERGE INTO [dbo].[users] AS target
+USING [dbo].[users_staging] AS source
+ON target.[user_id] = source.[user_id]
+WHEN MATCHED THEN
+  UPDATE SET
+    target.[name] = source.[name],
+    target.[email] = source.[email]
+WHEN NOT MATCHED BY TARGET THEN
+  INSERT ([user_id], [name], [email])
+  VALUES (source.[user_id], source.[name], source.[email])
+OUTPUT $action, inserted.*, deleted.*;
+```
+
+#### Temporary Staging Table with Clustered Index
+
+```python
+from schema_mapper.incremental import get_incremental_generator
+
+generator = get_incremental_generator('sqlserver')
+schema, _ = mapper.generate_schema(df)
+
+staging_ddl = generator.generate_staging_table_ddl(
+    schema,
+    'users',
+    dataset_name='dbo',
+    use_temp_table=True,
+    clustered_index_columns=['user_id', 'created_at']
+)
+
+print(staging_ddl)
+```
+
+**Output:**
+```sql
+-- Create temporary staging table
+CREATE TABLE #users_staging (
+  [user_id] INT NOT NULL,
+  [name] NVARCHAR(100),
+  [email] NVARCHAR(255),
+  [created_at] DATETIME2,
+  INDEX CIX_users_staging CLUSTERED ([user_id], [created_at])
+);
+```
+
+#### BULK INSERT for File Loading
+
+```python
+# SQL Server-specific helper for loading from files
+ddl = mapper.generate_sqlserver_bulk_insert(
+    df,
+    table_name='users',
+    file_path='C:\\data\\users.csv',
+    schema_name='dbo',
+    database_name='Analytics',
+    field_terminator=',',
+    row_terminator='\\n',
+    first_row=2  # Skip header
+)
+
+print(ddl)
+```
+
+**Output:**
+```sql
+BULK INSERT [Analytics].[dbo].[users]
+FROM 'C:\data\users.csv'
+WITH (
+  FIELDTERMINATOR = ',',
+  ROWTERMINATOR = '\n',
+  FIRSTROW = 2,
+  TABLOCK
+);
+```
+
+#### UPDATE STATISTICS for Query Optimization
+
+```python
+# Update statistics after large data loads
+ddl = mapper.generate_sqlserver_update_statistics(
+    table_name='users',
+    schema_name='dbo',
+    database_name='Analytics'
+)
+
+print(ddl)
+```
+
+**Output:**
+```sql
+UPDATE STATISTICS [Analytics].[dbo].[users] WITH FULLSCAN;
+```
+
+#### Convenience Method for MERGE
+
+```python
+# Shortcut method for common UPSERT pattern
+ddl = mapper.generate_merge_ddl(
+    df,
+    'users',
+    primary_keys=['user_id'],
+    dataset_name='dbo',
+    database_name='Analytics'
+)
+```
+
 ## What's Next?
 
-This documentation covers PROMPT 1-4:
+This documentation covers PROMPT 1-6:
 - ✅ PROMPT 1: Architecture & Core Abstractions
 - ✅ PROMPT 2: Primary Key Detection
 - ✅ PROMPT 3: BigQuery Implementation
 - ✅ PROMPT 4: Snowflake Implementation
+- ✅ PROMPT 5: Redshift Implementation (DELETE+INSERT pattern)
+- ✅ PROMPT 6: SQL Server Implementation (T-SQL MERGE)
 
 **Coming in future prompts**:
-- PROMPT 5: Redshift implementation (DELETE+INSERT pattern)
-- PROMPT 6: SQL Server implementation
 - PROMPT 7: PostgreSQL implementation (ON CONFLICT)
 - PROMPT 8: Integration tests & examples
 - PROMPT 9: CLI support & final polish

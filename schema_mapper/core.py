@@ -744,5 +744,125 @@ class SchemaMapper:
             **kwargs
         )
 
+    def generate_sqlserver_bulk_insert(
+        self,
+        df: pd.DataFrame,
+        table_name: str,
+        file_path: str,
+        schema_name: Optional[str] = 'dbo',
+        database_name: Optional[str] = None,
+        **kwargs
+    ) -> str:
+        """
+        Generate SQL Server BULK INSERT statement.
+
+        Convenience method for SQL Server bulk loading from files.
+
+        Args:
+            df: DataFrame (used for schema generation)
+            table_name: Target table name
+            file_path: Path to data file (local or UNC)
+            schema_name: Schema name (default 'dbo')
+            database_name: Database name
+            **kwargs: Additional options for BULK INSERT
+
+        Returns:
+            BULK INSERT statement
+
+        Raises:
+            ValueError: If target_type is not 'sqlserver'
+
+        Example:
+            >>> mapper = SchemaMapper('sqlserver')
+            >>> bulk_ddl = mapper.generate_sqlserver_bulk_insert(
+            ...     df,
+            ...     'events',
+            ...     'C:\\\\data\\\\events.csv',
+            ...     schema_name='staging'
+            ... )
+            >>> print(bulk_ddl)
+            BULK INSERT [staging].[events_staging]
+            FROM 'C:\\data\\events.csv'
+            WITH (
+              FIELDTERMINATOR = ',',
+              ROWTERMINATOR = '\\n',
+              FIRSTROW = 2,
+              TABLOCK
+            );
+        """
+        if self.target_type != 'sqlserver':
+            raise ValueError(
+                f"generate_sqlserver_bulk_insert() only works with SQL Server mapper. "
+                f"Current target: {self.target_type}"
+            )
+
+        # Generate schema
+        schema, _ = self.generate_schema(df)
+
+        # Lazy-load SQL Server generator
+        if self.incremental_generator is None:
+            from .incremental import get_incremental_generator
+            self.incremental_generator = get_incremental_generator('sqlserver')
+
+        logger.info(f"Generating BULK INSERT for {table_name} from {file_path}")
+
+        return self.incremental_generator.generate_bulk_insert_ddl(
+            schema=schema,
+            table_name=table_name,
+            file_path=file_path,
+            dataset_name=schema_name,
+            database_name=database_name,
+            **kwargs
+        )
+
+    def generate_sqlserver_update_statistics(
+        self,
+        table_name: str,
+        schema_name: Optional[str] = 'dbo',
+        database_name: Optional[str] = None
+    ) -> str:
+        """
+        Generate SQL Server UPDATE STATISTICS command.
+
+        Args:
+            table_name: Table name
+            schema_name: Schema name (default 'dbo')
+            database_name: Database name
+
+        Returns:
+            UPDATE STATISTICS command
+
+        Raises:
+            ValueError: If target_type is not 'sqlserver'
+
+        Example:
+            >>> mapper = SchemaMapper('sqlserver')
+            >>> stats_cmd = mapper.generate_sqlserver_update_statistics(
+            ...     'events',
+            ...     schema_name='dbo'
+            ... )
+            >>> print(stats_cmd)
+            -- Update table statistics
+            UPDATE STATISTICS [dbo].[events] WITH FULLSCAN;
+        """
+        if self.target_type != 'sqlserver':
+            raise ValueError(
+                f"generate_sqlserver_update_statistics() only works with SQL Server mapper. "
+                f"Current target: {self.target_type}"
+            )
+
+        # Lazy-load SQL Server generator
+        if self.incremental_generator is None:
+            from .incremental import get_incremental_generator
+            self.incremental_generator = get_incremental_generator('sqlserver')
+
+        logger.info(f"Generating UPDATE STATISTICS for {table_name}")
+
+        return self.incremental_generator.generate_update_statistics_command(
+            table_name=table_name,
+            dataset_name=schema_name,
+            database_name=database_name
+        )
+
     def __repr__(self) -> str:
         return f"SchemaMapper(target_type='{self.target_type}')"
