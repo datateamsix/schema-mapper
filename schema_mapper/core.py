@@ -864,5 +864,130 @@ class SchemaMapper:
             database_name=database_name
         )
 
+    def generate_postgresql_copy_from_csv(
+        self,
+        df: pd.DataFrame,
+        table_name: str,
+        file_path: str,
+        schema_name: Optional[str] = 'public',
+        **kwargs
+    ) -> str:
+        """
+        Generate PostgreSQL COPY FROM CSV statement.
+
+        Convenience method for PostgreSQL CSV bulk loading.
+
+        Args:
+            df: DataFrame (used for schema generation)
+            table_name: Target table name
+            file_path: Path to CSV file
+            schema_name: Schema name (default 'public')
+            **kwargs: Additional options (delimiter, header, null_string, encoding)
+
+        Returns:
+            COPY FROM statement
+
+        Raises:
+            ValueError: If target_type is not 'postgresql'
+
+        Example:
+            >>> mapper = SchemaMapper('postgresql')
+            >>> copy_ddl = mapper.generate_postgresql_copy_from_csv(
+            ...     df,
+            ...     'events',
+            ...     '/data/events.csv',
+            ...     schema_name='staging'
+            ... )
+            >>> print(copy_ddl)
+            -- Load data from CSV into staging table
+            COPY "staging"."events_staging" (
+              "user_id",
+              "name",
+              "email"
+            )
+            FROM '/data/events.csv'
+            WITH (
+              FORMAT csv,
+              DELIMITER ',',
+              HEADER true,
+              NULL '',
+              ENCODING 'UTF8'
+            );
+        """
+        if self.target_type != 'postgresql':
+            raise ValueError(
+                f"generate_postgresql_copy_from_csv() only works with PostgreSQL mapper. "
+                f"Current target: {self.target_type}"
+            )
+
+        # Generate schema
+        schema, _ = self.generate_schema(df)
+
+        # Lazy-load PostgreSQL generator
+        if self.incremental_generator is None:
+            from .incremental import get_incremental_generator
+            self.incremental_generator = get_incremental_generator('postgresql')
+
+        logger.info(f"Generating COPY FROM CSV for {table_name} from {file_path}")
+
+        return self.incremental_generator.generate_copy_from_csv_ddl(
+            schema=schema,
+            table_name=table_name,
+            file_path=file_path,
+            dataset_name=schema_name,
+            **kwargs
+        )
+
+    def generate_postgresql_maintenance(
+        self,
+        table_name: str,
+        schema_name: Optional[str] = 'public',
+        vacuum_full: bool = False
+    ) -> str:
+        """
+        Generate PostgreSQL VACUUM and ANALYZE commands.
+
+        Args:
+            table_name: Table name
+            schema_name: Schema name (default 'public')
+            vacuum_full: Perform VACUUM FULL (rewrites table)
+
+        Returns:
+            VACUUM ANALYZE command
+
+        Raises:
+            ValueError: If target_type is not 'postgresql'
+
+        Example:
+            >>> mapper = SchemaMapper('postgresql')
+            >>> maintenance = mapper.generate_postgresql_maintenance(
+            ...     'events',
+            ...     schema_name='public',
+            ...     vacuum_full=False
+            ... )
+            >>> print(maintenance)
+            -- Reclaim space and update statistics
+            VACUUM ANALYZE "public"."events";
+        """
+        if self.target_type != 'postgresql':
+            raise ValueError(
+                f"generate_postgresql_maintenance() only works with PostgreSQL mapper. "
+                f"Current target: {self.target_type}"
+            )
+
+        # Lazy-load PostgreSQL generator
+        if self.incremental_generator is None:
+            from .incremental import get_incremental_generator
+            self.incremental_generator = get_incremental_generator('postgresql')
+
+        logger.info(f"Generating VACUUM ANALYZE for {table_name}")
+
+        return self.incremental_generator.generate_vacuum_command(
+            table_name=table_name,
+            dataset_name=schema_name,
+            full=vacuum_full,
+            analyze=True
+        )
+
     def __repr__(self) -> str:
         return f"SchemaMapper(target_type='{self.target_type}')"

@@ -128,7 +128,8 @@ class DataVisualizer:
             try:
                 series.plot.kde(ax=axes[idx], color='red', linewidth=2, label='KDE')
                 axes[idx].legend()
-            except:
+            except Exception as e:
+                logger.debug(f"KDE plot failed for column '{col}': {e}")
                 pass  # KDE might fail for some distributions
 
             axes[idx].set_title(f'{col} Distribution', fontsize=10, fontweight='bold')
@@ -250,7 +251,8 @@ class DataVisualizer:
                 p = np.poly1d(z)
                 ax.plot(df[x], p(df[x]), "r--", alpha=0.8, linewidth=2, label='Trend')
                 ax.legend()
-            except:
+            except Exception as e:
+                logger.debug(f"Could not add regression line for {x} vs {y}: {e}")
                 pass
 
         plt.tight_layout()
@@ -472,7 +474,8 @@ class DataVisualizer:
             try:
                 series1.plot.kde(ax=ax, color='darkblue', linewidth=2)
                 series2.plot.kde(ax=ax, color='darkred', linewidth=2)
-            except:
+            except Exception as e:
+                logger.debug(f"KDE plot failed for comparison: {e}")
                 pass
 
             ax.set_ylabel('Density', fontsize=10)

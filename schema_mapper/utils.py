@@ -243,7 +243,8 @@ def _cast_object_column_enhanced(
         logger.info(f"Column '{col_name}': Detected as date string ({pattern_info['date_string']:.1f}%)")
         try:
             return pd.to_datetime(series, errors='coerce', format='mixed')
-        except:
+        except Exception as e:
+            logger.debug(f"Could not convert column '{col_name}' to datetime: {e}")
             pass
 
     # Check if column is primarily numeric (currency or percentage)

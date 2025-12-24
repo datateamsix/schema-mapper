@@ -999,7 +999,8 @@ class Profiler:
             parsed = pd.to_datetime(series, errors='coerce')
             success = parsed.notna().sum()
             return (success / len(series)) * 100
-        except:
+        except Exception as e:
+            logger.debug(f"Error parsing dates in series: {e}")
             return 0.0
 
     def _check_currency_pattern(self, series: pd.Series) -> float:

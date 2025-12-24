@@ -1,4 +1,4 @@
-# Incremental Loads - Production Guide
+\# Incremental Loads - Production Guide
 
 ## Overview
 
@@ -998,16 +998,18 @@ ddl = mapper.generate_merge_ddl(
 )
 ```
 
-### SQL Server Incremental Loads
+### PostgreSQL Incremental Loads
 
-SQL Server has full support for all incremental load patterns using T-SQL MERGE statements with transaction support, OUTPUT clause for auditing, and BULK INSERT for file loading.
+PostgreSQL has full support for incremental loads using INSERT ... ON CONFLICT for upserts, CTEs with RETURNING clauses, TEMPORARY tables, and the COPY command for efficient bulk loading.
 
-#### Basic UPSERT (Merge) with Transactions
+#### Basic UPSERT (INSERT ... ON CONFLICT)
+
+PostgreSQL uses `INSERT ... ON CONFLICT` instead of MERGE for upsert operations:
 
 ```python
 from schema_mapper import SchemaMapper, IncrementalConfig, LoadPattern
 
-mapper = SchemaMapper('sqlserver')
+mapper = SchemaMapper('postgresql')
 
 config = IncrementalConfig(
     load_pattern=LoadPattern.UPSERT,
@@ -1018,8 +1020,7 @@ ddl = mapper.generate_incremental_ddl(
     df,
     'users',
     config,
-    dataset_name='dbo',
-    database_name='Analytics'
+    dataset_name='public'
 )
 
 print(ddl)
@@ -1027,46 +1028,56 @@ print(ddl)
 
 **Output:**
 ```sql
-BEGIN TRANSACTION;
+BEGIN;
 
-MERGE INTO [Analytics].[dbo].[users] AS target
-USING [Analytics].[dbo].[users_staging] AS source
-ON target.[user_id] = source.[user_id]
-WHEN MATCHED
- THEN
-  UPDATE SET
-    target.[name] = source.[name],
-    target.[email] = source.[email],
-    target.[updated_at] = source.[updated_at]
-WHEN NOT MATCHED BY TARGET THEN
-  INSERT (
-    [user_id],
-    [name],
-    [email],
-    [updated_at],
-    [created_at]
-  )
-  VALUES (
-    source.[user_id],
-    source.[name],
-    source.[email],
-    source.[updated_at],
-    GETDATE()
-  )
-;
+-- Upsert using INSERT ... ON CONFLICT
+INSERT INTO "public"."users" (
+  "user_id",
+  "name",
+  "email"
+)
+SELECT
+  "user_id",
+  "name",
+  "email"
+FROM "public"."users_staging"
+ON CONFLICT ("user_id")
+DO UPDATE SET
+  "name" = EXCLUDED."name",
+  "email" = EXCLUDED."email";
 
-COMMIT TRANSACTION;
+COMMIT;
 ```
 
-#### SCD Type 2 with MERGE Approach
+#### INSERT ... ON CONFLICT DO NOTHING
+
+Insert only new records, ignore conflicts:
+
+```python
+config = IncrementalConfig(
+    load_pattern=LoadPattern.UPSERT,
+    primary_keys=['user_id'],
+    merge_strategy=MergeStrategy.UPDATE_NONE  # DO NOTHING on conflict
+)
+
+ddl = mapper.generate_incremental_ddl(
+    df,
+    'users',
+    config
+)
+```
+
+#### SCD Type 2 with CTEs
+
+PostgreSQL uses CTEs (Common Table Expressions) for clean SCD Type 2 implementation:
 
 ```python
 config = IncrementalConfig(
     load_pattern=LoadPattern.SCD_TYPE2,
     primary_keys=['customer_id'],
-    hash_columns=['name', 'email', 'address'],
-    effective_date_column='valid_from',
-    expiration_date_column='valid_to',
+    hash_columns=['name', 'email', 'phone'],
+    effective_date_column='effective_from',
+    expiration_date_column='effective_to',
     is_current_column='is_current'
 )
 
@@ -1074,315 +1085,300 @@ ddl = mapper.generate_incremental_ddl(
     df,
     'dim_customers',
     config,
-    dataset_name='dim',
-    database_name='Analytics'
+    dataset_name='public'
 )
 ```
 
 **Output:**
 ```sql
 -- SCD Type 2: Maintain historical versions
-BEGIN TRANSACTION;
+BEGIN;
 
-MERGE INTO [Analytics].[dim].[dim_customers] AS target
-USING [Analytics].[dim].[dim_customers_staging] AS source
-ON target.[customer_id] = source.[customer_id]
-   AND target.[is_current] = 1
-WHEN MATCHED AND (
-  ISNULL(CAST(target.[name] AS NVARCHAR(MAX)), 'NULL_SENTINEL') != ISNULL(CAST(source.[name] AS NVARCHAR(MAX)), 'NULL_SENTINEL') OR
-  ISNULL(CAST(target.[email] AS NVARCHAR(MAX)), 'NULL_SENTINEL') != ISNULL(CAST(source.[email] AS NVARCHAR(MAX)), 'NULL_SENTINEL') OR
-  ISNULL(CAST(target.[address] AS NVARCHAR(MAX)), 'NULL_SENTINEL') != ISNULL(CAST(source.[address] AS NVARCHAR(MAX)), 'NULL_SENTINEL')
-) THEN
-  UPDATE SET
-    target.[valid_to] = CAST(GETDATE() AS DATE),
-    target.[is_current] = 0
-WHEN NOT MATCHED BY TARGET THEN
-  INSERT (
-    [customer_id],
-    [name],
-    [email],
-    [address],
-    [valid_from],
-    [valid_to],
-    [is_current]
-  )
-  VALUES (
-    source.[customer_id],
-    source.[name],
-    source.[email],
-    source.[address],
-    CAST(GETDATE() AS DATE),
-    CAST('9999-12-31' AS DATE),
-    1
-  );
+-- Step 1: Expire records that have changed
+WITH changed_records AS (
+  SELECT target."customer_id"
+  FROM "public"."dim_customers" AS target
+  INNER JOIN "public"."dim_customers_staging" AS source
+    ON target."customer_id" = source."customer_id"
+  WHERE target."is_current" = TRUE
+    AND (
+      target."name" IS DISTINCT FROM source."name" OR
+      target."email" IS DISTINCT FROM source."email" OR
+      target."phone" IS DISTINCT FROM source."phone"
+    )
+)
+UPDATE "public"."dim_customers"
+SET
+  "effective_to" = CURRENT_DATE,
+  "is_current" = FALSE
+FROM changed_records
+WHERE "dim_customers"."customer_id" = changed_records."customer_id";
 
--- Insert new versions of changed records
-INSERT INTO [Analytics].[dim].[dim_customers] (
-  [customer_id],
-  [name],
-  [email],
-  [address],
-  [valid_from],
-  [valid_to],
-  [is_current]
+-- Step 2: Insert new and changed records
+INSERT INTO "public"."dim_customers" (
+  "customer_id", "name", "email", "phone",
+  "effective_from", "effective_to", "is_current"
 )
 SELECT
-  source.[customer_id],
-  source.[name],
-  source.[email],
-  source.[address],
-  CAST(GETDATE() AS DATE) AS [valid_from],
-  CAST('9999-12-31' AS DATE) AS [valid_to],
-  1 AS [is_current]
-FROM [Analytics].[dim].[dim_customers_staging] AS source
-INNER JOIN [Analytics].[dim].[dim_customers] AS target
-  ON target.[customer_id] = source.[customer_id]
-WHERE target.[is_current] = 0
-  AND target.[valid_to] = CAST(GETDATE() AS DATE);
+  source."customer_id", source."name", source."email", source."phone",
+  CURRENT_DATE AS "effective_from",
+  '9999-12-31'::DATE AS "effective_to",
+  TRUE AS "is_current"
+FROM "public"."dim_customers_staging" AS source
+WHERE NOT EXISTS (
+  SELECT 1 FROM "public"."dim_customers" AS target
+  WHERE
+    target."customer_id" = source."customer_id"
+    AND target."is_current" = TRUE
+    AND (
+      target."name" IS NOT DISTINCT FROM source."name" AND
+      target."email" IS NOT DISTINCT FROM source."email" AND
+      target."phone" IS NOT DISTINCT FROM source."phone"
+    )
+);
 
-COMMIT TRANSACTION;
+COMMIT;
+
+-- Recommended: ANALYZE "public"."dim_customers";
 ```
 
-#### Incremental Timestamp Load with DATEADD
+#### Incremental Load with Timestamp
+
+Uses CTE for cleaner SQL:
 
 ```python
 config = IncrementalConfig(
     load_pattern=LoadPattern.INCREMENTAL_TIMESTAMP,
     primary_keys=['event_id'],
     incremental_column='event_timestamp',
-    lookback_window='2 hours'  # Safety margin
+    lookback_window='2 hours'
 )
 
 ddl = mapper.generate_incremental_ddl(
     df,
     'events',
     config,
-    dataset_name='dbo'
+    dataset_name='public'
 )
 ```
 
 **Output:**
 ```sql
--- Incremental load based on [event_timestamp]
-BEGIN TRANSACTION;
-
--- Get max timestamp from target
-DECLARE @max_ts DATETIME;
-SELECT @max_ts = ISNULL(MAX([event_timestamp]), '1970-01-01')
-FROM [dbo].[events];
+-- Incremental load based on "event_timestamp"
+BEGIN;
 
 -- Load only new records
-INSERT INTO [dbo].[events] (
-  [event_id],
-  [user_id],
-  [event_type],
-  [event_timestamp]
+WITH max_timestamp AS (
+  SELECT COALESCE(MAX("event_timestamp"), '1970-01-01'::TIMESTAMP) AS max_timestamp
+  FROM "public"."events"
+)
+INSERT INTO "public"."events" (
+  "event_id", "user_id", "event_type", "event_timestamp"
 )
 SELECT
-  [event_id],
-  [user_id],
-  [event_type],
-  [event_timestamp]
-FROM [dbo].[events_staging]
-WHERE [event_timestamp] > DATEADD(HOUR, -2, @max_ts)
-;
+  "event_id", "user_id", "event_type", "event_timestamp"
+FROM "public"."events_staging"
+CROSS JOIN max_timestamp
+WHERE "event_timestamp" > max_timestamp.max_timestamp - INTERVAL '2 hours';
 
-COMMIT TRANSACTION;
+COMMIT;
+
+-- Recommended: ANALYZE "public"."events";
 ```
 
-#### CDC (Change Data Capture) with Single MERGE
+#### CDC (Change Data Capture)
+
+Process I/U/D operations from a CDC stream:
 
 ```python
 config = IncrementalConfig(
     load_pattern=LoadPattern.CDC_MERGE,
     primary_keys=['user_id'],
-    operation_column='_op',  # I/U/D indicator
-    delete_strategy=DeleteStrategy.HARD_DELETE
+    operation_column='_op',
+    delete_strategy=DeleteStrategy.SOFT_DELETE,
+    soft_delete_column='is_deleted'
 )
 
 ddl = mapper.generate_incremental_ddl(
-    df,
+    df_cdc,
     'users',
     config,
-    dataset_name='dbo'
+    dataset_name='public'
 )
 ```
 
 **Output:**
 ```sql
--- CDC Merge: Handle Insert/Update/Delete operations
-BEGIN TRANSACTION;
+-- CDC Processing: Handle Insert/Update/Delete operations
+BEGIN;
 
-MERGE INTO [dbo].[users] AS target
-USING [dbo].[users_staging] AS source
-ON target.[user_id] = source.[user_id]
-WHEN MATCHED AND source.[_op] = 'D' THEN
-  DELETE
-WHEN MATCHED AND source.[_op] = 'U' THEN
-  UPDATE SET
-    target.[name] = source.[name],
-    target.[email] = source.[email],
-    target.[_timestamp] = source.[_timestamp]
-WHEN NOT MATCHED BY TARGET AND source.[_op] = 'I' THEN
-  INSERT (
-    [user_id],
-    [name],
-    [email],
-    [_timestamp]
-  )
-  VALUES (
-    source.[user_id],
-    source.[name],
-    source.[email],
-    source.[_timestamp]
-  );
+-- Step 1: Process DELETE operations (soft delete)
+UPDATE "public"."users"
+SET "is_deleted" = TRUE
+WHERE ("user_id") IN (
+  SELECT "user_id"
+  FROM "public"."users_staging"
+  WHERE "_op" = 'D'
+);
 
-COMMIT TRANSACTION;
+-- Step 2: Process UPDATE operations
+INSERT INTO "public"."users" (
+  "user_id", "name", "email"
+)
+SELECT
+  "user_id", "name", "email"
+FROM "public"."users_staging"
+WHERE "_op" = 'U'
+ON CONFLICT ("user_id")
+DO UPDATE SET
+  "name" = EXCLUDED."name",
+  "email" = EXCLUDED."email";
+
+-- Step 3: Process INSERT operations
+INSERT INTO "public"."users" (
+  "user_id", "name", "email"
+)
+SELECT
+  "user_id", "name", "email"
+FROM "public"."users_staging"
+WHERE "_op" = 'I'
+ON CONFLICT ("user_id") DO NOTHING;
+
+COMMIT;
+
+-- Recommended: ANALYZE "public"."users";
 ```
 
-#### MERGE with OUTPUT Clause for Auditing
+#### Complete CSV to PostgreSQL Workflow
 
 ```python
+from schema_mapper import SchemaMapper, IncrementalConfig, LoadPattern
 from schema_mapper.incremental import get_incremental_generator
 
-generator = get_incremental_generator('sqlserver')
+mapper = SchemaMapper('postgresql')
+
+# Step 1: Create temporary staging table
 schema, _ = mapper.generate_schema(df)
-
-config = IncrementalConfig(
-    load_pattern=LoadPattern.UPSERT,
-    primary_keys=['user_id']
-)
-
-ddl = generator.generate_merge_ddl(
-    schema,
-    'users',
-    config,
-    dataset_name='dbo',
-    capture_output=True  # Enable OUTPUT clause
-)
-
-print(ddl)
-```
-
-**Output:**
-```sql
-MERGE INTO [dbo].[users] AS target
-USING [dbo].[users_staging] AS source
-ON target.[user_id] = source.[user_id]
-WHEN MATCHED THEN
-  UPDATE SET
-    target.[name] = source.[name],
-    target.[email] = source.[email]
-WHEN NOT MATCHED BY TARGET THEN
-  INSERT ([user_id], [name], [email])
-  VALUES (source.[user_id], source.[name], source.[email])
-OUTPUT $action, inserted.*, deleted.*;
-```
-
-#### Temporary Staging Table with Clustered Index
-
-```python
-from schema_mapper.incremental import get_incremental_generator
-
-generator = get_incremental_generator('sqlserver')
-schema, _ = mapper.generate_schema(df)
+generator = get_incremental_generator('postgresql')
 
 staging_ddl = generator.generate_staging_table_ddl(
     schema,
-    'users',
-    dataset_name='dbo',
-    use_temp_table=True,
-    clustered_index_columns=['user_id', 'created_at']
+    'events',
+    temporary=True  # Auto-drops on commit
 )
 
-print(staging_ddl)
-```
-
-**Output:**
-```sql
--- Create temporary staging table
-CREATE TABLE #users_staging (
-  [user_id] INT NOT NULL,
-  [name] NVARCHAR(100),
-  [email] NVARCHAR(255),
-  [created_at] DATETIME2,
-  INDEX CIX_users_staging CLUSTERED ([user_id], [created_at])
-);
-```
-
-#### BULK INSERT for File Loading
-
-```python
-# SQL Server-specific helper for loading from files
-ddl = mapper.generate_sqlserver_bulk_insert(
+# Step 2: Load CSV using COPY
+copy_ddl = mapper.generate_postgresql_copy_from_csv(
     df,
-    table_name='users',
-    file_path='C:\\data\\users.csv',
-    schema_name='dbo',
-    database_name='Analytics',
-    field_terminator=',',
-    row_terminator='\\n',
-    first_row=2  # Skip header
+    'events',
+    '/data/events.csv',
+    schema_name='public',
+    delimiter=',',
+    header=True
 )
 
-print(ddl)
-```
-
-**Output:**
-```sql
-BULK INSERT [Analytics].[dbo].[users]
-FROM 'C:\data\users.csv'
-WITH (
-  FIELDTERMINATOR = ',',
-  ROWTERMINATOR = '\n',
-  FIRSTROW = 2,
-  TABLOCK
-);
-```
-
-#### UPDATE STATISTICS for Query Optimization
-
-```python
-# Update statistics after large data loads
-ddl = mapper.generate_sqlserver_update_statistics(
-    table_name='users',
-    schema_name='dbo',
-    database_name='Analytics'
+# Step 3: UPSERT to final table
+config = IncrementalConfig(
+    load_pattern=LoadPattern.UPSERT,
+    primary_keys=['event_id']
 )
 
-print(ddl)
-```
-
-**Output:**
-```sql
-UPDATE STATISTICS [Analytics].[dbo].[users] WITH FULLSCAN;
-```
-
-#### Convenience Method for MERGE
-
-```python
-# Shortcut method for common UPSERT pattern
-ddl = mapper.generate_merge_ddl(
+upsert_ddl = mapper.generate_incremental_ddl(
     df,
+    'events',
+    config,
+    dataset_name='public'
+)
+
+# Step 4: Update statistics
+maintenance = mapper.generate_postgresql_maintenance(
+    'events',
+    schema_name='public'
+)
+
+# Execute in sequence:
+# 1. staging_ddl
+# 2. copy_ddl
+# 3. upsert_ddl
+# 4. maintenance
+```
+
+#### Using Temporary Tables
+
+PostgreSQL temp tables auto-cleanup on transaction end:
+
+```python
+# Create temp staging table
+staging_ddl = generator.generate_staging_table_ddl(
+    schema,
     'users',
+    temporary=True  # Adds ON COMMIT DROP
+)
+
+# Use in same transaction
+config = IncrementalConfig(
+    load_pattern=LoadPattern.UPSERT,
     primary_keys=['user_id'],
-    dataset_name='dbo',
-    database_name='Analytics'
+    staging_table='users_staging'  # No schema for temp tables
 )
+```
+
+### PostgreSQL Best Practices
+
+1. **Use COPY for bulk loads** - 10-100x faster than INSERT
+2. **ANALYZE after large loads** - Updates query planner statistics
+3. **Use temporary tables** - Automatically cleaned up
+4. **Leverage CTEs** - Cleaner, more readable SQL
+5. **IS DISTINCT FROM for NULL-safe comparisons** - Handles NULLs correctly
+6. **VACUUM regularly** - Reclaims space from deleted/updated rows
+7. **Use appropriate indexes** - B-tree for most cases, GiST/GIN for specialized
+
+#### Performance Tips
+
+```python
+# For large tables (millions of rows):
+# - Use COPY instead of INSERT
+# - Create indexes AFTER bulk load, not before
+# - Use TEMPORARY tables for staging
+# - Run VACUUM ANALYZE after major changes
+
+# For temporary tables:
+# - ON COMMIT DROP: Auto-cleanup after transaction
+# - ON COMMIT DELETE ROWS: Keep structure, clear data
+# - Temp tables are session-scoped by default
+
+# For transactions:
+# - Keep transactions short
+# - Use BEGIN/COMMIT explicitly
+# - Consider batch processing for very large datasets
+```
+
+#### NULL Handling
+
+PostgreSQL has excellent NULL handling with `IS DISTINCT FROM`:
+
+```python
+# Instead of:
+# WHERE col1 != col2 OR (col1 IS NULL AND col2 IS NOT NULL) ...
+
+# Use:
+# WHERE col1 IS DISTINCT FROM col2
+
+# This is automatically used in UPDATE_CHANGED strategy
 ```
 
 ## What's Next?
 
-This documentation covers PROMPT 1-6:
+This documentation covers PROMPT 1-7:
 - ✅ PROMPT 1: Architecture & Core Abstractions
 - ✅ PROMPT 2: Primary Key Detection
 - ✅ PROMPT 3: BigQuery Implementation
 - ✅ PROMPT 4: Snowflake Implementation
-- ✅ PROMPT 5: Redshift Implementation (DELETE+INSERT pattern)
-- ✅ PROMPT 6: SQL Server Implementation (T-SQL MERGE)
+- ✅ PROMPT 5: Redshift Implementation
+- ✅ PROMPT 6: SQL Server Implementation
+- ✅ PROMPT 7: PostgreSQL Implementation
 
 **Coming in future prompts**:
-- PROMPT 7: PostgreSQL implementation (ON CONFLICT)
 - PROMPT 8: Integration tests & examples
 - PROMPT 9: CLI support & final polish
 

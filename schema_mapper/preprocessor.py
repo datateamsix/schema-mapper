@@ -207,7 +207,8 @@ class PreProcessor:
                             parsed = pd.to_datetime(sample, errors='coerce')
                             if parsed.notna().sum() / len(sample) > 0.7:
                                 columns.append(col)
-                        except:
+                        except Exception as e:
+                            logger.debug(f"Could not parse column {col} as datetime: {e}")
                             pass
             if not columns:
                 logger.info("No date columns auto-detected")
