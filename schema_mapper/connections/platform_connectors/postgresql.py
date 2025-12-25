@@ -728,6 +728,130 @@ class PostgreSQLConnection(BaseConnection):
                 platform=self.platform_name()
             )
 
+    # ==================== SAVEPOINT SUPPORT ====================
+
+    def savepoint(self, name: Optional[str] = None) -> str:
+        """
+        Create a savepoint within a PostgreSQL transaction.
+
+        Args:
+            name: Savepoint name (auto-generated if not provided)
+
+        Returns:
+            Savepoint name
+
+        Raises:
+            TransactionError: If savepoint creation fails
+            ConnectionError: If not connected
+
+        Examples:
+            >>> conn.begin_transaction()
+            >>> sp1 = conn.savepoint('before_update')
+            >>> try:
+            ...     conn.execute_ddl("UPDATE users SET active = true")
+            ... except Exception:
+            ...     conn.rollback_to_savepoint(sp1)
+            >>> conn.commit()
+        """
+        try:
+            self.require_connection()
+
+            if not self._transaction_active:
+                raise TransactionError(
+                    "Cannot create savepoint without active transaction",
+                    platform=self.platform_name()
+                )
+
+            # Generate name if not provided
+            if name is None:
+                self._savepoint_counter += 1
+                name = f"sp_{self._savepoint_counter}"
+
+            # Create savepoint
+            self._cursor.execute(f"SAVEPOINT {name}")
+            self._transaction_stats['total_savepoints'] += 1
+            self.logger.debug(f"Created savepoint: {name}")
+
+            return name
+
+        except TransactionError:
+            raise
+        except Exception as e:
+            raise TransactionError(
+                f"Failed to create savepoint: {e}",
+                platform=self.platform_name()
+            )
+
+    def rollback_to_savepoint(self, name: str) -> None:
+        """
+        Rollback to a PostgreSQL savepoint.
+
+        Args:
+            name: Savepoint name
+
+        Raises:
+            TransactionError: If rollback fails
+            ConnectionError: If not connected
+
+        Examples:
+            >>> conn.rollback_to_savepoint('sp1')
+        """
+        try:
+            self.require_connection()
+
+            if not self._transaction_active:
+                raise TransactionError(
+                    "Cannot rollback to savepoint without active transaction",
+                    platform=self.platform_name()
+                )
+
+            self._cursor.execute(f"ROLLBACK TO SAVEPOINT {name}")
+            self.logger.info(f"Rolled back to savepoint: {name}")
+
+        except TransactionError:
+            raise
+        except Exception as e:
+            raise TransactionError(
+                f"Failed to rollback to savepoint: {e}",
+                platform=self.platform_name()
+            )
+
+    def release_savepoint(self, name: str) -> None:
+        """
+        Release a PostgreSQL savepoint.
+
+        Args:
+            name: Savepoint name
+
+        Raises:
+            TransactionError: If release fails
+            ConnectionError: If not connected
+
+        Examples:
+            >>> conn.release_savepoint('sp1')
+        """
+        try:
+            self.require_connection()
+
+            if not self._transaction_active:
+                raise TransactionError(
+                    "Cannot release savepoint without active transaction",
+                    platform=self.platform_name()
+                )
+
+            self._cursor.execute(f"RELEASE SAVEPOINT {name}")
+            self.logger.debug(f"Released savepoint: {name}")
+
+        except TransactionError:
+            raise
+        except Exception as e:
+            raise TransactionError(
+                f"Failed to release savepoint: {e}",
+                platform=self.platform_name()
+            )
+
+    # ==================== PRIVATE METHODS ====================
+
     def _set_isolation_level(self, level: str) -> None:
         """
         Set transaction isolation level.

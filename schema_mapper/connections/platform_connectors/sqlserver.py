@@ -827,6 +827,118 @@ class SQLServerConnection(BaseConnection):
                 platform=self.platform_name()
             )
 
+    # ==================== SAVEPOINT SUPPORT ====================
+
+    def savepoint(self, name: Optional[str] = None) -> str:
+        """
+        Create a savepoint within a SQL Server transaction.
+
+        Args:
+            name: Savepoint name (auto-generated if not provided)
+
+        Returns:
+            Savepoint name
+
+        Raises:
+            TransactionError: If savepoint creation fails
+            ConnectionError: If not connected
+
+        Examples:
+            >>> conn.begin_transaction()
+            >>> sp1 = conn.savepoint('before_update')
+            >>> try:
+            ...     conn.execute_ddl("UPDATE users SET active = 1")
+            ... except Exception:
+            ...     conn.rollback_to_savepoint(sp1)
+            >>> conn.commit()
+        """
+        try:
+            self.require_connection()
+
+            if not self._transaction_active:
+                raise TransactionError(
+                    "Cannot create savepoint without active transaction",
+                    platform=self.platform_name()
+                )
+
+            # Generate name if not provided
+            if name is None:
+                self._savepoint_counter += 1
+                name = f"sp_{self._savepoint_counter}"
+
+            # Create savepoint (SQL Server syntax: SAVE TRANSACTION)
+            self._cursor.execute(f"SAVE TRANSACTION {name}")
+            self._transaction_stats['total_savepoints'] += 1
+            self.logger.debug(f"Created savepoint: {name}")
+
+            return name
+
+        except TransactionError:
+            raise
+        except Exception as e:
+            raise TransactionError(
+                f"Failed to create savepoint: {e}",
+                platform=self.platform_name()
+            )
+
+    def rollback_to_savepoint(self, name: str) -> None:
+        """
+        Rollback to a SQL Server savepoint.
+
+        Args:
+            name: Savepoint name
+
+        Raises:
+            TransactionError: If rollback fails
+            ConnectionError: If not connected
+
+        Examples:
+            >>> conn.rollback_to_savepoint('sp1')
+        """
+        try:
+            self.require_connection()
+
+            if not self._transaction_active:
+                raise TransactionError(
+                    "Cannot rollback to savepoint without active transaction",
+                    platform=self.platform_name()
+                )
+
+            # SQL Server syntax: ROLLBACK TRANSACTION
+            self._cursor.execute(f"ROLLBACK TRANSACTION {name}")
+            self.logger.info(f"Rolled back to savepoint: {name}")
+
+        except TransactionError:
+            raise
+        except Exception as e:
+            raise TransactionError(
+                f"Failed to rollback to savepoint: {e}",
+                platform=self.platform_name()
+            )
+
+    def release_savepoint(self, name: str) -> None:
+        """
+        Release a SQL Server savepoint.
+
+        Note: SQL Server does not have an explicit RELEASE SAVEPOINT command.
+        Savepoints are automatically released when the transaction commits.
+        This method is a no-op for SQL Server but included for API consistency.
+
+        Args:
+            name: Savepoint name
+
+        Examples:
+            >>> conn.release_savepoint('sp1')  # No-op in SQL Server
+        """
+        # SQL Server doesn't have RELEASE SAVEPOINT
+        # Savepoints are automatically cleared on COMMIT
+        self.logger.debug(
+            f"SQL Server does not support explicit savepoint release. "
+            f"Savepoint '{name}' will be released automatically on commit."
+        )
+
+    # ==================== PRIVATE METHODS ====================
+
     def _set_isolation_level(self, level: str) -> None:
         """
         Set transaction isolation level.

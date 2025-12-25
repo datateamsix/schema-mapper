@@ -9,6 +9,8 @@ and integration with canonical schema.
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Optional, Dict, Any, List
+from contextlib import contextmanager
+from datetime import datetime
 import logging
 
 from ..canonical import CanonicalSchema
@@ -16,7 +18,8 @@ from .exceptions import (
     ConnectionError,
     ConfigurationError,
     TableNotFoundError,
-    ExecutionError
+    ExecutionError,
+    TransactionError
 )
 
 
@@ -81,6 +84,16 @@ class BaseConnection(ABC):
         self._connection = None
         self._cursor = None
         self._transaction_active = False
+        self._savepoint_counter = 0  # For savepoint naming
+
+        # Transaction statistics
+        self._transaction_stats = {
+            'total_transactions': 0,
+            'total_commits': 0,
+            'total_rollbacks': 0,
+            'total_savepoints': 0,
+            'active_transaction_start': None,
+        }
 
         # Set up logging
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
@@ -465,6 +478,189 @@ class BaseConnection(ABC):
             >>> conn.rollback()
         """
         pass
+
+    @contextmanager
+    def transaction(self, isolation_level: Optional[str] = None):
+        """
+        Transaction context manager.
+
+        Automatically begins, commits, or rolls back transaction.
+        Provides a clean interface for transactional operations.
+
+        Args:
+            isolation_level: Optional isolation level (platform-specific)
+
+        Yields:
+            self (for chaining operations)
+
+        Raises:
+            TransactionError: If transaction fails
+            ConnectionError: If not connected
+
+        Examples:
+            >>> with conn.transaction():
+            ...     conn.execute_ddl("CREATE TABLE users (id INT)")
+            ...     conn.execute_ddl("CREATE TABLE orders (id INT)")
+            >>> # Auto-committed
+
+            >>> with conn.transaction(isolation_level='serializable'):
+            ...     conn.execute_ddl(ddl)
+            ...     # If exception occurs, auto-rollback
+
+            >>> # Explicit control
+            >>> with conn.transaction() as txn:
+            ...     txn.execute_ddl(ddl1)
+            ...     if some_condition:
+            ...         raise Exception("Rollback!")
+            ...     txn.execute_ddl(ddl2)
+        """
+        self.require_connection()
+
+        # Track transaction start
+        transaction_start = datetime.now()
+        self._transaction_stats['active_transaction_start'] = transaction_start
+
+        # Begin transaction with optional isolation level
+        if isolation_level:
+            # Check if platform supports isolation levels
+            begin_method = getattr(self, 'begin_transaction')
+            import inspect
+            sig = inspect.signature(begin_method)
+            if 'isolation_level' in sig.parameters:
+                self.begin_transaction(isolation_level=isolation_level)
+            else:
+                self.logger.warning(
+                    f"{self.platform_name()} does not support isolation levels, "
+                    "using default transaction semantics"
+                )
+                self.begin_transaction()
+        else:
+            self.begin_transaction()
+
+        self._transaction_stats['total_transactions'] += 1
+
+        try:
+            yield self
+            # Success - commit
+            self.commit()
+            self._transaction_stats['total_commits'] += 1
+
+            # Log transaction duration
+            duration = (datetime.now() - transaction_start).total_seconds()
+            self.logger.info(f"Transaction committed (duration: {duration:.2f}s)")
+
+        except Exception as e:
+            # Failure - rollback
+            self.logger.warning(f"Transaction failed, rolling back: {e}")
+            try:
+                self.rollback()
+                self._transaction_stats['total_rollbacks'] += 1
+            except Exception as rollback_error:
+                self.logger.error(f"Rollback failed: {rollback_error}")
+            raise
+
+        finally:
+            self._transaction_stats['active_transaction_start'] = None
+
+    def get_transaction_stats(self) -> Dict[str, Any]:
+        """
+        Get transaction statistics for this connection.
+
+        Returns:
+            Dictionary with transaction metrics
+
+        Examples:
+            >>> stats = conn.get_transaction_stats()
+            >>> print(f"Commits: {stats['total_commits']}")
+            >>> print(f"Rollbacks: {stats['total_rollbacks']}")
+        """
+        stats = self._transaction_stats.copy()
+
+        # Calculate active transaction duration if applicable
+        if stats['active_transaction_start']:
+            duration = (datetime.now() - stats['active_transaction_start']).total_seconds()
+            stats['active_transaction_duration_seconds'] = duration
+        else:
+            stats['active_transaction_duration_seconds'] = None
+
+        # Calculate success rate
+        total_completed = stats['total_commits'] + stats['total_rollbacks']
+        if total_completed > 0:
+            stats['commit_success_rate'] = stats['total_commits'] / total_completed
+        else:
+            stats['commit_success_rate'] = None
+
+        return stats
+
+    # ==================== SAVEPOINT SUPPORT ====================
+    # Default implementations (no-op for platforms that don't support savepoints)
+    # PostgreSQL and SQL Server override these methods
+
+    def savepoint(self, name: Optional[str] = None) -> str:
+        """
+        Create a savepoint within a transaction.
+
+        Savepoints allow partial rollback within a transaction.
+        Supported by PostgreSQL and SQL Server.
+
+        Args:
+            name: Savepoint name (auto-generated if not provided)
+
+        Returns:
+            Savepoint name
+
+        Raises:
+            TransactionError: If savepoint creation fails
+            NotImplementedError: If platform doesn't support savepoints
+
+        Examples:
+            >>> conn.begin_transaction()
+            >>> sp1 = conn.savepoint('before_risky_operation')
+            >>> try:
+            ...     conn.execute_ddl(risky_ddl)
+            ... except Exception:
+            ...     conn.rollback_to_savepoint(sp1)
+            >>> conn.commit()
+        """
+        raise NotImplementedError(
+            f"{self.platform_name()} does not support savepoints"
+        )
+
+    def rollback_to_savepoint(self, name: str) -> None:
+        """
+        Rollback to a savepoint.
+
+        Args:
+            name: Savepoint name
+
+        Raises:
+            TransactionError: If rollback fails
+            NotImplementedError: If platform doesn't support savepoints
+
+        Examples:
+            >>> conn.rollback_to_savepoint('sp1')
+        """
+        raise NotImplementedError(
+            f"{self.platform_name()} does not support savepoints"
+        )
+
+    def release_savepoint(self, name: str) -> None:
+        """
+        Release a savepoint (remove it without rolling back).
+
+        Args:
+            name: Savepoint name
+
+        Raises:
+            TransactionError: If release fails
+            NotImplementedError: If platform doesn't support savepoints
+
+        Examples:
+            >>> conn.release_savepoint('sp1')
+        """
+        raise NotImplementedError(
+            f"{self.platform_name()} does not support savepoints"
+        )
 
     # ==================== METADATA ====================
 
