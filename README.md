@@ -6,9 +6,11 @@
 [![Python Support](https://img.shields.io/pypi/pyversions/schema-mapper.svg)](https://pypi.org/project/schema-mapper/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Production-grade schema management and data pipeline orchestration for modern data platforms**
+**One API. Five Databases. Zero Rewrites.**
 
-Stop wrestling with platform-specific DDL, manual schema management, and fragile data pipelines. Schema-mapper provides a **unified, canonical approach** to working with BigQuery, Snowflake, Redshift, SQL Server, and PostgreSQL—from schema inference to database execution.
+Schema, metadata, and connections—unified for lean data teams working across BigQuery, Snowflake, Redshift, SQL Server, and PostgreSQL.
+
+Stop rewriting schemas, DDL, and connection logic for every database platform. Schema-mapper provides a **production-grade ETL toolkit** that works the same across all platforms—write once, deploy anywhere.
 
 ---
 
