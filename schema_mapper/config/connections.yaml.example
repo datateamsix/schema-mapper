@@ -1,0 +1,79 @@
+# Schema Mapper - Database Connections Configuration
+#
+# This file demonstrates how to configure database connections for schema-mapper.
+# Copy this file to connections.yaml and fill in your credentials.
+#
+# Environment variables can be used with ${VAR_NAME} syntax.
+# Create a .env file in the same directory to store secrets securely.
+
+# Default target platform (used when target not specified)
+target: snowflake
+
+# Connection configurations for each platform
+connections:
+
+  # ==================== SNOWFLAKE ====================
+  snowflake:
+    user: ${SNOWFLAKE_USER}              # Snowflake username
+    password: ${SNOWFLAKE_PASSWORD}      # Snowflake password
+    account: ${SNOWFLAKE_ACCOUNT}        # Account identifier (e.g., abc123.us-east-1)
+    warehouse: ANALYTICS_WH              # Warehouse name
+    database: ANALYTICS                   # Default database
+    schema: PUBLIC                        # Default schema
+    role: TRANSFORMER                     # Role (optional)
+
+  # ==================== BIGQUERY ====================
+  bigquery:
+    project: ${GCP_PROJECT_ID}                    # GCP project ID
+    credentials_path: ${BQ_CREDENTIALS_PATH}      # Path to service account JSON
+    location: US                                   # Dataset location (US, EU, etc.)
+    dataset: analytics                             # Default dataset (optional)
+
+  # ==================== POSTGRESQL ====================
+  postgresql:
+    host: ${PG_HOST}                     # PostgreSQL host (localhost, IP, or hostname)
+    port: 5432                            # Port (default: 5432)
+    database: analytics                   # Database name
+    user: ${PG_USER}                     # Username
+    password: ${PG_PASSWORD}             # Password
+    schema: public                        # Default schema (optional)
+
+  # ==================== REDSHIFT ====================
+  redshift:
+    host: ${REDSHIFT_HOST}               # Redshift cluster endpoint
+    port: 5439                            # Port (default: 5439)
+    database: analytics                   # Database name
+    user: ${REDSHIFT_USER}               # Username
+    password: ${REDSHIFT_PASSWORD}       # Password
+    schema: public                        # Default schema (optional)
+
+  # ==================== SQL SERVER ====================
+  sqlserver:
+    server: ${MSSQL_SERVER}              # Server address (hostname or IP)
+    database: analytics                   # Database name
+    user: ${MSSQL_USER}                  # Username
+    password: ${MSSQL_PASSWORD}          # Password
+    driver: "ODBC Driver 18 for SQL Server"  # ODBC driver
+    # Optional settings:
+    # port: 1433
+    # encrypt: yes
+    # trust_server_certificate: no
+
+# ==================== USAGE EXAMPLES ====================
+#
+# From Python:
+#   from schema_mapper.connections import ConnectionConfig, ConnectionFactory
+#
+#   config = ConnectionConfig('connections.yaml')
+#   conn = ConnectionFactory.get_connection('snowflake', config)
+#   with conn:
+#       schema = conn.get_target_schema('users', schema_name='public')
+#
+# Using default target:
+#   conn = ConnectionFactory.get_connection_from_config(config)  # Uses 'target' from YAML
+#
+# From dictionary (no YAML):
+#   conn = ConnectionFactory.get_connection('bigquery', {
+#       'project': 'my-project',
+#       'credentials_path': '/path/to/key.json'
+#   })
