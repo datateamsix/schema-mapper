@@ -1,0 +1,169 @@
+# Schema-Mapper Connection Configuration
+#
+# This file configures database connections for all supported platforms.
+# Environment variables are supported using ${VAR_NAME} syntax.
+#
+# Setup:
+#   1. Copy this file: cp connections.yaml.example connections.yaml
+#   2. Create .env file with your credentials (see .env.example)
+#   3. Update platform-specific settings below
+
+# Default target platform (used when platform not specified)
+target: bigquery
+
+# Connection configurations for each platform
+connections:
+
+  # ============================================================================
+  # BigQuery (Google Cloud)
+  # ============================================================================
+  bigquery:
+    # GCP project ID (required)
+    project: ${GCP_PROJECT}
+
+    # Path to service account JSON key (optional - uses default credentials if not provided)
+    credentials_path: ${GOOGLE_APPLICATION_CREDENTIALS:-}
+
+    # Default dataset location (optional)
+    location: ${GCP_LOCATION:-US}
+
+    # Default dataset (optional)
+    dataset: ${GCP_DATASET:-analytics}
+
+  # ============================================================================
+  # Snowflake
+  # ============================================================================
+  snowflake:
+    # Account identifier (required) - Format: abc123.us-east-1 or abc123
+    account: ${SNOWFLAKE_ACCOUNT}
+
+    # Username (required)
+    user: ${SNOWFLAKE_USER}
+
+    # Password (required)
+    password: ${SNOWFLAKE_PASSWORD}
+
+    # Warehouse (recommended)
+    warehouse: ${SNOWFLAKE_WAREHOUSE:-COMPUTE_WH}
+
+    # Database (recommended)
+    database: ${SNOWFLAKE_DATABASE:-ANALYTICS}
+
+    # Schema (recommended)
+    schema: ${SNOWFLAKE_SCHEMA:-PUBLIC}
+
+    # Role (optional)
+    role: ${SNOWFLAKE_ROLE:-}
+
+  # ============================================================================
+  # PostgreSQL
+  # ============================================================================
+  postgresql:
+    # Host (required)
+    host: ${PG_HOST:-localhost}
+
+    # Port (optional - default: 5432)
+    port: ${PG_PORT:-5432}
+
+    # Database (required)
+    database: ${PG_DATABASE}
+
+    # Username (required)
+    user: ${PG_USER}
+
+    # Password (required)
+    password: ${PG_PASSWORD}
+
+    # SSL mode (optional - values: disable, allow, prefer, require, verify-ca, verify-full)
+    sslmode: ${PG_SSLMODE:-prefer}
+
+  # ============================================================================
+  # Redshift (Amazon)
+  # ============================================================================
+  redshift:
+    # Cluster endpoint (required) - Format: cluster.abc123.region.redshift.amazonaws.com
+    host: ${REDSHIFT_HOST}
+
+    # Port (optional - default: 5439)
+    port: ${REDSHIFT_PORT:-5439}
+
+    # Database (required)
+    database: ${REDSHIFT_DATABASE}
+
+    # Username (required)
+    user: ${REDSHIFT_USER}
+
+    # Password (required)
+    password: ${REDSHIFT_PASSWORD}
+
+    # SSL (optional)
+    sslmode: ${REDSHIFT_SSLMODE:-require}
+
+  # ============================================================================
+  # SQL Server (Microsoft)
+  # ============================================================================
+  sqlserver:
+    # Server (required) - Format: hostname or hostname\instance or hostname,port
+    server: ${MSSQL_SERVER}
+
+    # Database (required)
+    database: ${MSSQL_DATABASE}
+
+    # Username (required)
+    user: ${MSSQL_USER}
+
+    # Password (required)
+    password: ${MSSQL_PASSWORD}
+
+    # ODBC Driver (optional - default: ODBC Driver 18 for SQL Server)
+    driver: ${MSSQL_DRIVER:-ODBC Driver 18 for SQL Server}
+
+    # Trust server certificate (optional - useful for self-signed certs)
+    trust_server_certificate: ${MSSQL_TRUST_CERT:-yes}
+
+# ============================================================================
+# Connection Pooling Configuration (Optional)
+# ============================================================================
+pooling:
+  # Enable connection pooling (recommended for production)
+  enabled: true
+
+  # Minimum connections to maintain in pool
+  min_size: 2
+
+  # Maximum connections allowed in pool
+  max_size: 10
+
+  # Maximum idle time before connection cleanup (seconds)
+  max_idle_seconds: 300  # 5 minutes
+
+  # Maximum connection lifetime (seconds)
+  max_lifetime_seconds: 3600  # 1 hour
+
+  # Validate connection health before checkout
+  validate_on_checkout: true
+
+  # Maximum wait time for available connection (seconds)
+  wait_timeout: 30
+
+# ============================================================================
+# Retry Configuration (Optional)
+# ============================================================================
+retry:
+  # Enable automatic retry on transient errors
+  enabled: true
+
+  # Maximum retry attempts
+  max_retries: 3
+
+  # Initial delay between retries (seconds)
+  base_delay: 1.0
+
+  # Exponential backoff multiplier
+  backoff_factor: 2.0
+
+  # Maximum delay between retries (seconds)
+  max_delay: 60.0
+
+  # Add random jitter to prevent thundering herd
+  jitter: true

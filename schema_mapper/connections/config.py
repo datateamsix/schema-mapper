@@ -228,6 +228,7 @@ class ConnectionConfig:
         pattern = r'\$\{([^}:]+)(?::-(.*?))?\}'
 
         def replace_var(match):
+            """Replace environment variable placeholder with actual value."""
             var_name = match.group(1)
             default_value = match.group(2)
 

@@ -111,8 +111,10 @@ def retry_on_transient_error(
         ...         pass
     """
     def decorator(func: Callable) -> Callable:
+        """Inner decorator that wraps the function with retry logic."""
         @wraps(func)
         def wrapper(*args, **kwargs):
+            """Wrapper function that implements retry with exponential backoff."""
             last_error = None
             func_platform = platform
 

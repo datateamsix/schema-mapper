@@ -311,6 +311,7 @@ class ConnectionFactory:
 
         # Create connection factory function
         def connection_factory():
+            """Factory function for creating new connections in the pool."""
             return cls.get_connection(target, config)
 
         # Create pool

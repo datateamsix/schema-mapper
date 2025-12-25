@@ -1010,15 +1010,34 @@ RUN_INTEGRATION_TESTS=1 pytest tests/integration/ -v
 
 ## 📖 Examples
 
-Explore complete working examples in [`examples/`](examples/):
+Explore complete, production-ready examples in [`examples/`](examples/):
 
-- [`basic_usage.py`](examples/basic_usage.py) - Simple workflow
-- [`multi_platform.py`](examples/multi_platform.py) - Generate for all platforms
-- [`production_analytics_pipeline.py`](examples/production_analytics_pipeline.py) - Production use case
-- [`canonical_schema_usage.py`](examples/canonical_schema_usage.py) - Canonical schema patterns
-- [`profiler_demo.py`](examples/profiler_demo.py) - Data profiling
-- [`preprocessor_demo.py`](examples/preprocessor_demo.py) - Data cleaning
-- [`connection_examples.py`](examples/connection_examples.py) - **NEW!** Unified connections
+### Core Use Cases
+- [`01_basic_usage.py`](examples/01_basic_usage.py) - Simple DataFrame to database workflow (5 min)
+- [`02_multi_cloud_migration.py`](examples/02_multi_cloud_migration.py) - **Multi-cloud migration** (BigQuery → Snowflake) (10 min)
+- [`03_etl_with_quality_gates.py`](examples/03_etl_with_quality_gates.py) - **ETL pipeline with quality gates** (15 min)
+- [`04_incremental_upsert.py`](examples/04_incremental_upsert.py) - **Incremental UPSERT loads** (10 min)
+- [`05_scd_type2_tracking.py`](examples/05_scd_type2_tracking.py) - **SCD Type 2 dimension tracking** (15 min)
+
+### Production Integration
+- [`06_prefect_orchestration.py`](examples/06_prefect_orchestration.py) - 🌟 **Prefect orchestration** with tagged stages, quality gates, and artifacts (20 min)
+- [`07_connection_pooling.py`](examples/07_connection_pooling.py) - Connection pooling for high-concurrency workloads (10 min)
+
+**📚 See [`examples/README.md`](examples/README.md)** for setup instructions, configuration templates, and learning path.
+
+**🔧 Quick Setup:**
+```bash
+# 1. Install with platform dependencies
+pip install schema-mapper[bigquery,snowflake,postgresql]
+
+# 2. Create configuration (see examples/README.md)
+cp config/connections.yaml.example config/connections.yaml
+# Edit connections.yaml with your credentials
+
+# 3. Run examples
+python examples/01_basic_usage.py
+python examples/06_prefect_orchestration.py  # Prefect integration
+```
 
 ---
 
