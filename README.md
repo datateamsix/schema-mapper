@@ -6,89 +6,532 @@
 [![Python Support](https://img.shields.io/pypi/pyversions/schema-mapper.svg)](https://pypi.org/project/schema-mapper/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Universal database schema mapper for BigQuery, Snowflake, Redshift, SQL Server, and PostgreSQL**
+**Production-grade schema management and data pipeline orchestration for modern data platforms**
 
-Automatically generate schemas, DDL statements, and prepare your data for loading into any major database platform. Perfect for data engineers working across multiple cloud providers.
+Stop wrestling with platform-specific DDL, manual schema management, and fragile data pipelines. Schema-mapper provides a **unified, canonical approach** to working with BigQuery, Snowflake, Redshift, SQL Server, and PostgreSQL—from schema inference to database execution.
 
-## Features
+---
 
-- **5 Platform Support**: BigQuery, Snowflake, Redshift, SQL Server, PostgreSQL
-- **Automatic Type Detection**: Intelligently converts strings to dates, numbers, booleans
-- **Column Standardization**: Cleans messy column names for database compatibility
-- **Data Validation**: Pre-load validation to catch errors early
-- **Schema Generation**: JSON/DDL formats ready for CLI or API usage
-- **NULL Handling**: Automatically determines REQUIRED vs NULLABLE
-- **DDL Generation**: Platform-specific CREATE TABLE statements
-- **Table Optimization**: Clustering, partitioning, and distribution strategies
-- **Incremental Loads**: 9 production-ready load patterns (UPSERT, SCD2, CDC, etc.) (NEW!)
-- **Data Profiling**: Comprehensive quality assessment, anomaly detection, pattern recognition (NEW!)
-- **Data Preprocessing**: Intelligent cleaning, transformation, and validation pipelines (NEW!)
-- **Canonical Schema Date Formats**: Define date formats once, apply everywhere (NEW!)
-- **High Performance**: Efficiently handles datasets from 1K to 1M+ rows
+## 🎯 The Problem
 
-## Architecture
+Modern data teams face a frustrating reality:
 
-<div align="center">
-  <img src="https://raw.githubusercontent.com/datateamsix/schema-mapper/main/images/schema-mapper-architecture.png" alt="Schema Mapper Architecture" width="800"/>
-</div>
+```python
+# ❌ The Old Way: Platform-specific chaos
+if platform == 'bigquery':
+    client = bigquery.Client()
+    # Write BigQuery-specific DDL
+    # Handle BigQuery partitioning syntax
+    # Deal with BigQuery type quirks
+elif platform == 'snowflake':
+    conn = snowflake.connect(...)
+    # Rewrite everything for Snowflake
+    # Different clustering syntax
+    # Different type mappings
+# ... repeat for each platform
 
-The schema-mapper uses a **canonical schema** approach: infer once, render to any platform. This ensures consistent type mapping and optimization strategies across all supported databases.
+# Result: 5x the code, 5x the bugs, 5x the maintenance
+```
 
-<div align="center">
-  <img src="https://raw.githubusercontent.com/datateamsix/schema-mapper/main/images/canonical-schema.png" alt="Canonical Schema Flow" width="700"/>
-</div>
+**Pain points:**
+- 🔧 **Fragmented tooling** - Different APIs for each database
+- 📝 **Manual schema management** - Hand-writing DDL for every platform
+- 🐛 **Type mapping hell** - BIGINT vs NUMBER vs INT64 confusion
+- 🔄 **Duplicate logic** - Rewriting MERGE statements per platform
+- ⚠️ **No validation** - Catching errors only after failed loads
+- 🌐 **Multi-cloud complexity** - Can't easily move between platforms
 
-## Installation
+---
+
+## ✨ The Solution
+
+```python
+# ✅ The schema-mapper Way: Write once, run everywhere
+from schema_mapper import prepare_for_load
+from schema_mapper.connections import ConnectionFactory, ConnectionConfig
+
+# 1. Prepare data for ANY platform (automatic cleaning, validation, type detection)
+df_clean, schema, issues = prepare_for_load(df, target_type='bigquery')
+
+# 2. Connect to ANY database with unified API
+config = ConnectionConfig('connections.yaml')  # Single config for all platforms
+with ConnectionFactory.get_connection('bigquery', config) as conn:
+    # Create table from canonical schema
+    conn.create_table_from_schema(schema, if_not_exists=True)
+
+# 3. Switch platforms? Just change one parameter!
+# Same code works for Snowflake, Redshift, PostgreSQL, SQL Server
+```
+
+**One codebase, five platforms, zero headaches.**
+
+---
+
+## 🚀 Key Features
+
+### 🔌 **Unified Connection Layer** (NEW!)
+- **Single API** for all 5 database platforms
+- **Connection pooling** with thread-safe management
+- **Automatic retry logic** with exponential backoff
+- **Configuration-driven** with YAML + .env support
+- **Transaction support** across platforms
+- **Introspection** - Read existing schemas from any database
+
+### 🎨 **Canonical Schema Architecture**
+- **Platform-agnostic** schema representation
+- **Bidirectional mapping** - Database → CanonicalSchema → Database
+- **Single source of truth** for cross-platform migrations
+- **Type safety** with logical type system
+- **Metadata preservation** (partitioning, clustering, etc.)
+
+### 📊 **Intelligent Schema Generation**
+- **Automatic type detection** - Convert strings to dates, numbers, booleans
+- **Column standardization** - `User ID#` → `user_id`
+- **NULL handling** - Automatic REQUIRED vs NULLABLE detection
+- **Multi-platform DDL** - Generate CREATE TABLE for any target
+- **Optimization support** - Partitioning, clustering, distribution keys
+
+### 🔄 **Production-Ready Incremental Loads**
+- **9 load patterns**: UPSERT, SCD Type 2, CDC, Snapshot, Append-Only, etc.
+- **Platform-optimized SQL** - Native MERGE, optimized DELETE+INSERT
+- **Primary key detection** - Automatic composite key suggestions
+- **Change tracking** - Full history with SCD Type 2
+- **Transactional safety** - Atomic operations where supported
+
+### 🔍 **Data Quality & Profiling**
+- **Quality scoring** - Overall health assessment (0-100)
+- **Anomaly detection** - IQR, Z-score, Isolation Forest methods
+- **Pattern recognition** - Emails, phones, URLs, credit cards
+- **Missing value analysis** - Completeness and imputation strategies
+- **Statistical profiling** - Distributions, correlations, cardinality
+
+### 🧹 **Intelligent Data Preprocessing**
+- **Schema-aware cleaning** - Apply date formats from canonical schema
+- **Validation pipelines** - Email, phone, URL validation
+- **Missing data handling** - Mean, median, KNN imputation
+- **Duplicate removal** - Smart deduplication strategies
+- **Transformation logging** - Full audit trail
+
+---
+
+## 📦 Installation
 
 ```bash
 # Basic installation
 pip install schema-mapper
 
-# With platform-specific dependencies
+# With specific platform support
 pip install schema-mapper[bigquery]
 pip install schema-mapper[snowflake]
 pip install schema-mapper[redshift]
-pip install schema-mapper[sqlserver]
 pip install schema-mapper[postgresql]
+pip install schema-mapper[sqlserver]
 
-# Install all platform dependencies
+# Install everything
 pip install schema-mapper[all]
 ```
 
-## Quick Start
+---
+
+## ⚡ Quick Start
+
+### Basic Workflow: DataFrame → Schema → Database
 
 ```python
 from schema_mapper import prepare_for_load
+from schema_mapper.connections import ConnectionFactory, ConnectionConfig
 import pandas as pd
 
-# Load your messy data
+# 1. Load messy data
 df = pd.read_csv('messy_data.csv')
 
-# Prepare for ANY platform in one line!
+# 2. Prepare for target platform (cleaning, validation, type detection)
 df_clean, schema, issues = prepare_for_load(
     df,
-    target_type='bigquery',  # or 'snowflake', 'redshift', 'sqlserver', 'postgresql'
+    target_type='bigquery',  # or snowflake, redshift, postgresql, sqlserver
+    standardize_columns=True,
+    auto_cast=True,
+    validate=True
 )
 
-# Check for issues
-if not issues['errors']:
-    print(f"SUCCESS: {len(schema)} columns prepared and ready to load!")
-else:
-    print("ERROR: Fix these errors:", issues['errors'])
+# 3. Check for issues
+if issues['errors']:
+    print("Errors found:", issues['errors'])
+    exit(1)
+
+# 4. Connect and create table (unified API across all platforms)
+config = ConnectionConfig('connections.yaml')
+with ConnectionFactory.get_connection('bigquery', config) as conn:
+    # Test connection
+    conn.test_connection()
+
+    # Create table from canonical schema
+    conn.create_table_from_schema(schema, if_not_exists=True)
+
+    # Or execute raw DDL
+    # ddl = renderer.to_ddl()
+    # conn.execute_ddl(ddl)
+
+print(f"✓ Successfully loaded {len(df_clean)} rows to BigQuery!")
 ```
 
-## Data Quality & Preprocessing (NEW!)
+### Cross-Platform Migration: Snowflake → BigQuery
 
-### Profile Your Data
+```python
+from schema_mapper.connections import ConnectionFactory, ConnectionConfig
+from schema_mapper.renderers import RendererFactory
+
+config = ConnectionConfig('connections.yaml')
+
+# 1. Introspect schema from Snowflake
+with ConnectionFactory.get_connection('snowflake', config) as sf_conn:
+    canonical_schema = sf_conn.get_target_schema(
+        table='customers',
+        schema_name='public',
+        database='analytics'
+    )
+
+# 2. Render for BigQuery (automatic type conversion)
+renderer = RendererFactory.get_renderer('bigquery', canonical_schema)
+bq_ddl = renderer.to_ddl()
+
+# 3. Create in BigQuery
+with ConnectionFactory.get_connection('bigquery', config) as bq_conn:
+    bq_conn.execute_ddl(bq_ddl)
+
+print("✓ Migrated Snowflake → BigQuery!")
+```
+
+---
+
+## 🔌 Unified Connection System (NEW!)
+
+The connection system provides **one API for five databases**, eliminating platform-specific code.
+
+### Configuration (connections.yaml)
+
+```yaml
+target: bigquery  # Default connection
+
+connections:
+  bigquery:
+    project: ${GCP_PROJECT_ID}
+    credentials_path: ${BQ_CREDENTIALS_PATH}
+    location: US
+
+  snowflake:
+    account: ${SNOWFLAKE_ACCOUNT}
+    user: ${SNOWFLAKE_USER}
+    password: ${SNOWFLAKE_PASSWORD}
+    warehouse: COMPUTE_WH
+    database: ANALYTICS
+    schema: PUBLIC
+
+  postgresql:
+    host: ${PG_HOST}
+    port: 5432
+    database: analytics
+    user: ${PG_USER}
+    password: ${PG_PASSWORD}
+
+  redshift:
+    host: ${REDSHIFT_HOST}
+    port: 5439
+    database: analytics
+    user: ${REDSHIFT_USER}
+    password: ${REDSHIFT_PASSWORD}
+
+  sqlserver:
+    server: ${MSSQL_SERVER}
+    database: analytics
+    user: ${MSSQL_USER}
+    password: ${MSSQL_PASSWORD}
+    driver: '{ODBC Driver 17 for SQL Server}'
+
+# Optional: Connection pooling
+pooling:
+  enabled: true
+  default:
+    min_size: 2
+    max_size: 10
+```
+
+### Environment Variables (.env)
+
+```bash
+# BigQuery
+GCP_PROJECT_ID=my-project
+BQ_CREDENTIALS_PATH=/path/to/service-account.json
+
+# Snowflake
+SNOWFLAKE_ACCOUNT=abc123
+SNOWFLAKE_USER=svc_etl
+SNOWFLAKE_PASSWORD=********
+
+# PostgreSQL
+PG_HOST=localhost
+PG_USER=etl_user
+PG_PASSWORD=********
+
+# Redshift
+REDSHIFT_HOST=my-cluster.redshift.amazonaws.com
+REDSHIFT_USER=etl_user
+REDSHIFT_PASSWORD=********
+
+# SQL Server
+MSSQL_SERVER=my-server.database.windows.net
+MSSQL_USER=etl_user
+MSSQL_PASSWORD=********
+```
+
+### Connection API
+
+All platforms implement the same interface:
+
+```python
+from schema_mapper.connections import ConnectionFactory, ConnectionConfig
+
+config = ConnectionConfig('connections.yaml')
+
+# Works identically for all platforms
+with ConnectionFactory.get_connection('bigquery', config) as conn:
+    # Connection lifecycle
+    conn.test_connection()  # Health check
+
+    # Introspection
+    exists = conn.table_exists('users', schema_name='public')
+    schema = conn.get_target_schema('users', schema_name='public')
+    tables = conn.list_tables(schema_name='public')
+
+    # Execution
+    conn.execute_ddl("CREATE TABLE ...")
+    results = conn.execute_query("SELECT COUNT(*) FROM users")
+    conn.create_table_from_schema(canonical_schema)
+
+    # Transactions
+    with conn.transaction():
+        conn.execute_ddl("INSERT INTO ...")
+        conn.execute_ddl("UPDATE ...")
+        # Auto-commit on success, rollback on error
+```
+
+### Connection Features
+
+| Feature | BigQuery | Snowflake | PostgreSQL | Redshift | SQL Server |
+|---------|----------|-----------|------------|----------|------------|
+| **Connection Pooling** | ✓ | ✓ | ✓ | ✓ | ✓ |
+| **Auto Retry** | ✓ | ✓ | ✓ | ✓ | ✓ |
+| **Transactions** | ○ Auto-commit | ✓ Full | ✓ Full | ✓ Full | ✓ Full |
+| **Savepoints** | ✗ | ✓ | ✓ | ✓ | ✓ |
+| **Introspection** | ✓ API | ✓ INFORMATION_SCHEMA | ✓ pg_catalog | ✓ INFORMATION_SCHEMA | ✓ INFORMATION_SCHEMA |
+| **Context Manager** | ✓ | ✓ | ✓ | ✓ | ✓ |
+
+---
+
+## 🎨 Canonical Schema Architecture
+
+The **canonical schema** is schema-mapper's secret sauce—a platform-agnostic representation that ensures consistency.
+
+### Flow
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  INPUT SOURCES          CANONICAL SCHEMA                │
+├─────────────────────────────────────────────────────────┤
+│  DataFrame ──┐                                          │
+│  CSV ────────┼──→ infer ──→ CanonicalSchema ──┐        │
+│  JSON ───────┘                                 │        │
+│  Database ──→ introspect ──→ CanonicalSchema ─┤        │
+│                                                │        │
+│                                                ▼        │
+│                                         Renderer/       │
+│                                         Generator       │
+│                                                │        │
+│                                                ▼        │
+│                                           DDL, JSON,    │
+│                                           CLI Commands  │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Creating Canonical Schemas
+
+```python
+from schema_mapper.canonical import infer_canonical_schema, CanonicalSchema, ColumnDefinition, LogicalType
+import pandas as pd
+
+# Option 1: Infer from DataFrame
+df = pd.read_csv('data.csv')
+schema = infer_canonical_schema(
+    df,
+    table_name='customers',
+    dataset_name='analytics',
+    partition_columns=['created_date'],
+    cluster_columns=['customer_id', 'region']
+)
+
+# Option 2: Define manually
+schema = CanonicalSchema(
+    table_name='customers',
+    dataset_name='analytics',
+    columns=[
+        ColumnDefinition(
+            name='customer_id',
+            logical_type=LogicalType.BIGINT,
+            nullable=False
+        ),
+        ColumnDefinition(
+            name='email',
+            logical_type=LogicalType.STRING,
+            nullable=False
+        ),
+        ColumnDefinition(
+            name='created_at',
+            logical_type=LogicalType.TIMESTAMP,
+            nullable=False,
+            date_format='%Y-%m-%d %H:%M:%S',  # Applied during preprocessing
+            timezone='UTC'
+        ),
+        ColumnDefinition(
+            name='balance',
+            logical_type=LogicalType.DECIMAL,
+            nullable=True,
+            precision=10,
+            scale=2
+        )
+    ],
+    partition_columns=['created_date'],
+    cluster_columns=['customer_id', 'region']
+)
+
+# Option 3: Introspect from existing database
+with ConnectionFactory.get_connection('snowflake', config) as conn:
+    schema = conn.get_target_schema('customers', schema_name='public')
+```
+
+### Rendering to Platforms
+
+```python
+from schema_mapper.renderers import RendererFactory
+
+# One schema, many outputs
+for platform in ['bigquery', 'snowflake', 'postgresql', 'redshift']:
+    renderer = RendererFactory.get_renderer(platform, schema)
+
+    print(f"\n{platform.upper()} DDL:")
+    print(renderer.to_ddl())
+
+    # Platform-specific artifacts
+    if platform == 'bigquery' and renderer.supports_json_schema():
+        print(renderer.to_schema_json())  # BigQuery JSON schema
+```
+
+### Logical Type System
+
+| Logical Type | BigQuery | Snowflake | PostgreSQL | Redshift | SQL Server |
+|--------------|----------|-----------|------------|----------|------------|
+| `BIGINT` | INT64 | NUMBER(38,0) | BIGINT | BIGINT | BIGINT |
+| `INTEGER` | INT64 | NUMBER(38,0) | INTEGER | INTEGER | INT |
+| `DECIMAL` | NUMERIC | NUMBER(p,s) | NUMERIC(p,s) | DECIMAL(p,s) | DECIMAL(p,s) |
+| `FLOAT` | FLOAT64 | FLOAT | DOUBLE PRECISION | DOUBLE PRECISION | FLOAT |
+| `STRING` | STRING | VARCHAR(16MB) | TEXT | VARCHAR(65535) | NVARCHAR(MAX) |
+| `TEXT` | STRING | VARCHAR(16MB) | TEXT | VARCHAR(65535) | NVARCHAR(MAX) |
+| `BOOLEAN` | BOOL | BOOLEAN | BOOLEAN | BOOLEAN | BIT |
+| `DATE` | DATE | DATE | DATE | DATE | DATE |
+| `TIMESTAMP` | TIMESTAMP | TIMESTAMP_NTZ | TIMESTAMP | TIMESTAMP | DATETIME2 |
+| `TIMESTAMPTZ` | TIMESTAMP | TIMESTAMP_TZ | TIMESTAMPTZ | TIMESTAMPTZ | DATETIMEOFFSET |
+| `JSON` | JSON | VARIANT | JSONB | VARCHAR | NVARCHAR(MAX) |
+
+---
+
+## 🔄 Incremental Loads (Production-Grade)
+
+Generate optimized DDL for **9 incremental load patterns** across all platforms.
+
+### Supported Patterns
+
+| Pattern | Use Case | BigQuery | Snowflake | Redshift | PostgreSQL | SQL Server |
+|---------|----------|----------|-----------|----------|------------|------------|
+| **UPSERT (MERGE)** | Insert new, update existing | ✓ Native | ✓ Native | ✓ DELETE+INSERT | ✓ Native | ✓ Native |
+| **SCD Type 2** | Full history tracking | ✓ | ✓ | ✓ | ✓ | ✓ |
+| **CDC** | Change data capture (I/U/D) | ✓ | ✓ | ✓ | ✓ | ✓ |
+| **Incremental Timestamp** | Load recent records | ✓ | ✓ | ✓ | ✓ | ✓ |
+| **Append Only** | Insert only | ✓ | ✓ | ✓ | ✓ | ✓ |
+| **Delete-Insert** | Transactional replacement | ✓ | ✓ | ✓ | ✓ | ✓ |
+| **Full Refresh** | Complete reload | ✓ | ✓ | ✓ | ✓ | ✓ |
+| **SCD Type 1** | Current state only | ✓ | ✓ | ✓ | ✓ | ✓ |
+| **Snapshot** | Point-in-time captures | ✓ | ✓ | ✓ | ✓ | ✓ |
+
+### UPSERT Example
+
+```python
+from schema_mapper.incremental import IncrementalConfig, LoadPattern, get_incremental_generator
+
+# Configure UPSERT pattern
+config = IncrementalConfig(
+    load_pattern=LoadPattern.UPSERT,
+    primary_keys=['user_id']
+)
+
+# Generate platform-specific MERGE statement
+generator = get_incremental_generator('bigquery')
+ddl = generator.generate_incremental_ddl(
+    schema=canonical_schema,
+    table_name='users',
+    config=config
+)
+
+# Execute via connection
+with ConnectionFactory.get_connection('bigquery', conn_config) as conn:
+    conn.execute_ddl(ddl)
+```
+
+### SCD Type 2 Example
+
+```python
+# Track full history with slowly changing dimensions
+config = IncrementalConfig(
+    load_pattern=LoadPattern.SCD_TYPE2,
+    primary_keys=['customer_id'],
+    scd2_columns=['name', 'address', 'phone'],  # Tracked attributes
+    effective_date_column='valid_from',
+    end_date_column='valid_to',
+    is_current_column='is_current'
+)
+
+generator = get_incremental_generator('snowflake')
+ddl = generator.generate_incremental_ddl(schema, 'dim_customers', config)
+```
+
+### CDC (Change Data Capture) Example
+
+```python
+# Process insert/update/delete streams
+config = IncrementalConfig(
+    load_pattern=LoadPattern.CDC,
+    primary_keys=['order_id'],
+    operation_column='_cdc_operation'  # I, U, D
+)
+
+generator = get_incremental_generator('postgresql')
+ddl = generator.generate_incremental_ddl(schema, 'orders', config)
+```
+
+**Complete incremental load documentation**: [docs/INCREMENTAL_LOADS.md](docs/INCREMENTAL_LOADS.md)
+
+---
+
+## 🔍 Data Quality & Profiling
+
+### Comprehensive Data Profiling
 
 ```python
 from schema_mapper import SchemaMapper
 import pandas as pd
 
-df = pd.read_csv('messy_data.csv')
+df = pd.read_csv('customer_data.csv')
 mapper = SchemaMapper('bigquery')
 
-# Generate comprehensive data quality report
+# Generate full quality report
 report = mapper.profile_data(df, detailed=True)
 
 print(f"Overall Quality Score: {report['quality']['overall_score']}/100")
@@ -96,13 +539,13 @@ print(f"Completeness: {report['quality']['completeness_score']:.1f}%")
 print(f"Missing Values: {report['missing_values']['total_missing_percentage']:.1f}%")
 print(f"Duplicates: {report['duplicates']['count']} rows")
 
-# Detect anomalies
+# Anomaly detection
 if report['anomalies']:
     print("\nAnomalies detected:")
     for col, info in report['anomalies'].items():
         print(f"  {col}: {info['count']} outliers ({info['percentage']:.1f}%)")
 
-# Detect patterns (emails, phone numbers, URLs, etc.)
+# Pattern recognition (emails, phones, URLs, credit cards, etc.)
 if report['patterns']:
     for col, patterns in report['patterns'].items():
         print(f"\nPatterns in {col}:")
@@ -110,39 +553,24 @@ if report['patterns']:
             print(f"  {pattern}: {pct:.1f}%")
 ```
 
-### Clean and Transform Data
+### Intelligent Data Cleaning
 
 ```python
-from schema_mapper import SchemaMapper
-import pandas as pd
-
-df = pd.read_csv('messy_data.csv')
-mapper = SchemaMapper('bigquery')
-
-# Apply preprocessing pipeline
-df_clean = mapper.preprocess_data(
-    df,
-    pipeline=[
-        'fix_whitespace',           # Remove leading/trailing whitespace
-        'standardize_column_names', # Convert to snake_case
-        'remove_duplicates',        # Remove duplicate rows
-        'handle_missing',           # Handle missing values intelligently
-        'validate_emails',          # Validate email formats
-        'standardize_dates'         # Standardize date formats
-    ]
-)
-
-# Or use PreProcessor directly for fine-grained control
 from schema_mapper.preprocessor import PreProcessor
 
-preprocessor = PreProcessor(df)
+preprocessor = PreProcessor(df, canonical_schema=schema)
+
+# Fluent API with method chaining
 df_clean = (preprocessor
-    .fix_whitespace()
-    .standardize_column_names()
-    .validate_emails(columns=['email'])
-    .standardize_dates(columns=['created_at'], target_format='%Y-%m-%d')
-    .remove_duplicates()
-    .handle_missing(strategy='auto')
+    .fix_whitespace()                    # Remove leading/trailing whitespace
+    .standardize_column_names()          # Convert to snake_case
+    .validate_emails(columns=['email'])  # Validate email formats
+    .standardize_dates(                  # Standardize date formats
+        columns=['created_at'],
+        target_format='%Y-%m-%d'
+    )
+    .remove_duplicates()                 # Smart deduplication
+    .handle_missing(strategy='auto')     # Intelligent imputation
     .apply())
 
 # Check transformation log
@@ -151,325 +579,50 @@ for transform in preprocessor.transformation_log:
     print(f"  - {transform}")
 ```
 
-### Canonical Schema with Date Formats (Single Source of Truth)
+### Schema-Aware Preprocessing (NEW!)
 
 ```python
-from schema_mapper.canonical import CanonicalSchema, ColumnDefinition, LogicalType
-from schema_mapper import prepare_for_load
-import pandas as pd
-
-# Define your schema with date formats ONCE
+# Define date formats ONCE in canonical schema
 schema = CanonicalSchema(
     table_name='events',
     columns=[
-        ColumnDefinition('event_id', LogicalType.BIGINT, nullable=False),
         ColumnDefinition(
             'event_date',
             LogicalType.DATE,
-            date_format='%d/%m/%Y'  # European format - defined once!
+            date_format='%d/%m/%Y'  # European format
         ),
         ColumnDefinition(
             'created_at',
             LogicalType.TIMESTAMP,
             date_format='%d/%m/%Y %H:%M:%S',
             timezone='UTC'
-        ),
-        ColumnDefinition('user_id', LogicalType.INTEGER),
-        ColumnDefinition('amount', LogicalType.DECIMAL, precision=10, scale=2)
+        )
     ]
 )
 
-# Prepare data - date formats applied automatically!
-df_prepared, db_schema, issues = prepare_for_load(
+# Formats applied automatically during preprocessing!
+df_clean, db_schema, issues = prepare_for_load(
     df,
     'bigquery',
-    canonical_schema=schema  # Date formats applied and validated!
+    canonical_schema=schema  # ✨ Magic happens here
 )
-
-# Benefits:
-# ✓ Define date format ONCE in canonical schema
-# ✓ Automatically applied during preprocessing
-# ✓ Automatically validated against data
-# ✓ No manual date formatting code needed
 ```
 
-### Complete ETL with Profiling and Preprocessing
+---
 
-```python
-from schema_mapper import prepare_for_load
-import pandas as pd
+## 📊 Table Optimization
 
-df = pd.read_csv('messy_data.csv')
+### Platform-Specific Optimizations
 
-# Profile, clean, validate, and generate schema in one call
-df_clean, schema, issues, report = prepare_for_load(
-    df,
-    'bigquery',
-    profile=True,  # Generate quality report
-    preprocess_pipeline=[
-        'fix_whitespace',
-        'standardize_column_names',
-        'remove_duplicates',
-        'handle_missing'
-    ],
-    validate=True
-)
-
-print(f"Data Quality Score: {report['quality']['overall_score']}/100")
-print(f"Cleaned {len(df) - len(df_clean)} rows")
-print(f"Generated schema with {len(schema)} columns")
-
-if not issues['errors']:
-    print("✓ Ready to load!")
-    # df_clean.to_gbq('dataset.table', project_id='my-project')
-```
-
-## Incremental Loads (Production-Ready)
-
-Generate optimized DDL for incremental data loading patterns across all platforms. Perfect for production ETL/ELT pipelines.
-
-### Supported Load Patterns
-
-- **UPSERT (MERGE)** - Insert new, update existing records
-- **SCD Type 2** - Full history tracking with versioning
-- **CDC (Change Data Capture)** - Process insert/update/delete streams
-- **Incremental Timestamp** - Load only recent records
-- **Append Only** - Add new records without updates
-- **Delete-Insert** - Transactional upsert alternative
-- **Full Refresh** - Complete table reload
-- **SCD Type 1** - Current state only, no history
-- **Snapshot** - Point-in-time snapshots with metadata
-
-### Quick Example
-
-```python
-from schema_mapper import SchemaMapper, IncrementalConfig, LoadPattern
-import pandas as pd
-
-df = pd.read_csv('users.csv')
-mapper = SchemaMapper('bigquery')
-
-# Configure UPSERT pattern
-config = IncrementalConfig(
-    load_pattern=LoadPattern.UPSERT,
-    primary_keys=['user_id']
-)
-
-# Generate MERGE DDL
-ddl = mapper.generate_incremental_ddl(
-    df=df,
-    table_name='users',
-    config=config,
-    dataset_name='analytics',
-    project_id='my-project'
-)
-
-print(ddl)
-# Outputs platform-specific MERGE statement
-```
-
-### SCD Type 2 Example
-
-```python
-# Track full history with SCD Type 2
-config = IncrementalConfig(
-    load_pattern=LoadPattern.SCD_TYPE2,
-    primary_keys=['customer_id'],
-    effective_date_column='effective_date',
-    end_date_column='end_date',
-    is_current_column='is_current'
-)
-
-ddl = mapper.generate_incremental_ddl(df, 'customers', config)
-```
-
-### Platform Support
-
-| Pattern | BigQuery | Snowflake | Redshift | SQL Server | PostgreSQL |
+| Feature | BigQuery | Snowflake | Redshift | PostgreSQL | SQL Server |
 |---------|----------|-----------|----------|------------|------------|
-| UPSERT (MERGE) | ✓ Native | ✓ Native | ✓ Via DELETE+INSERT | ✓ Native | ✓ Native |
-| SCD Type 2 | ✓ | ✓ | ✓ | ✓ | ✓ |
-| CDC | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Incremental Timestamp | ✓ | ✓ | ✓ | ✓ | ✓ |
-| All Patterns | ✓ | ✓ | ✓ | ✓ | ✓ |
-
-**For complete documentation, patterns, and examples**: See [docs/INCREMENTAL_LOADS.md](docs/INCREMENTAL_LOADS.md)
-
-## Usage Examples
-
-**Complete Example Scripts:**
-- [basic_usage.py](schema-mapper-pkg/examples/basic_usage.py) - Simple schema generation workflow
-- [multi_platform.py](schema-mapper-pkg/examples/multi_platform.py) - Generate for all platforms at once
-- [production_analytics_pipeline.py](schema-mapper-pkg/examples/production_analytics_pipeline.py) - **Production use case with clustering & partitioning**
-- [ddl_with_clustering_examples.py](schema-mapper-pkg/examples/ddl_with_clustering_examples.py) - All platform optimization examples
-- [canonical_schema_usage.py](schema-mapper-pkg/examples/canonical_schema_usage.py) - **New renderer architecture** (canonical schema → multiple outputs)
-- [profiler_demo.py](schema-mapper-pkg/examples/profiler_demo.py) - **Data profiling and quality assessment** (NEW!)
-- [preprocessor_demo.py](schema-mapper-pkg/examples/preprocessor_demo.py) - **Data cleaning and transformation** (NEW!)
-- [canonical_schema_date_formats_demo.py](schema-mapper-pkg/examples/canonical_schema_date_formats_demo.py) - **Canonical schema with date formats** (NEW!)
-
-### Generate Schema
-
-```python
-from schema_mapper import SchemaMapper
-import pandas as pd
-
-df = pd.read_csv('data.csv')
-mapper = SchemaMapper('bigquery')
-
-# Generate schema
-schema, column_mapping = mapper.generate_schema(df)
-
-# See column transformations
-print(column_mapping)
-# {'User ID': 'user_id', 'First Name': 'first_name', ...}
-```
-
-### Generate DDL
-
-```python
-from schema_mapper import SchemaMapper
-import pandas as pd
-
-df = pd.read_csv('data.csv')
-
-# BigQuery
-mapper = SchemaMapper('bigquery')
-ddl = mapper.generate_ddl(df, 'customers', 'analytics', 'my-project')
-
-# Snowflake
-mapper = SchemaMapper('snowflake')
-ddl = mapper.generate_ddl(df, 'customers', 'analytics')
-
-# PostgreSQL
-mapper = SchemaMapper('postgresql')
-ddl = mapper.generate_ddl(df, 'customers', 'public')
-
-print(ddl)
-```
-
-### Generate Optimized DDL with Clustering & Partitioning
-
-```python
-from schema_mapper.generators import get_ddl_generator
-from schema_mapper import SchemaMapper
-import pandas as pd
-
-df = pd.read_csv('events.csv')
-
-# Generate schema first
-mapper = SchemaMapper('bigquery')
-schema, _ = mapper.generate_schema(df)
-
-# BigQuery: Partitioned by date, clustered by user_id
-generator = get_ddl_generator('bigquery')
-ddl = generator.generate(
-    schema=schema,
-    table_name='events',
-    dataset_name='analytics',
-    project_id='my-project',
-    partition_by='event_date',
-    partition_type='time',
-    partition_expiration_days=365,
-    cluster_by=['user_id', 'event_type']
-)
-
-print(ddl)
-# Output:
-# CREATE TABLE `my-project.analytics.events` (
-#   event_id INT64,
-#   user_id INT64,
-#   event_date DATE
-# )
-# PARTITION BY event_date
-# CLUSTER BY user_id, event_type
-# OPTIONS(
-#   partition_expiration_days=365
-# );
-```
-
-### Generate BigQuery Schema JSON
-
-```python
-from schema_mapper import SchemaMapper
-import pandas as pd
-
-df = pd.read_csv('data.csv')
-mapper = SchemaMapper('bigquery')
-
-# Generate schema JSON for bq CLI
-schema_json = mapper.generate_bigquery_schema_json(df)
-
-# Save to file
-with open('schema.json', 'w') as f:
-    f.write(schema_json)
-
-# Use with bq CLI
-# bq mk --table --schema schema.json project:dataset.table
-```
-
-### Complete ETL Workflow
-
-```python
-from schema_mapper import prepare_for_load, SchemaMapper
-import pandas as pd
-
-# 1. Load data
-df = pd.read_csv('customer_data.csv')
-
-# 2. Prepare and validate
-df_clean, schema, issues = prepare_for_load(
-    df,
-    target_type='bigquery',
-    standardize_columns=True,
-    auto_cast=True,
-    validate=True
-)
-
-# 3. Check issues
-if issues['errors']:
-    print("ERRORS:")
-    for error in issues['errors']:
-        print(f"  - {error}")
-    exit(1)
-
-if issues['warnings']:
-    print("WARNINGS:")
-    for warning in issues['warnings']:
-        print(f"  - {warning}")
-
-# 4. Generate artifacts
-mapper = SchemaMapper('bigquery')
-
-# Save cleaned data
-df_clean.to_csv('customers_clean.csv', index=False)
-
-# Save schema
-schema_json = mapper.generate_bigquery_schema_json(df)
-with open('customers_schema.json', 'w') as f:
-    f.write(schema_json)
-
-# Save DDL
-ddl = mapper.generate_ddl(df, 'customers', 'analytics', 'my-project')
-with open('create_customers.sql', 'w') as f:
-    f.write(ddl)
-
-print("SUCCESS: Ready for loading!")
-```
-
-## Table Optimization Features
-
-### Platform Capabilities
-
-| Feature | BigQuery | Snowflake | Redshift | SQL Server | PostgreSQL |
-|---------|----------|-----------|----------|------------|------------|
-| **Partitioning** | ✓ DATE/TIMESTAMP/RANGE | ~ Auto Micro | ✗ | ✗ | ✓ RANGE/LIST/HASH |
-| **Clustering** | ✓ Up to 4 cols | ✓ Up to 4 cols | ✗ | ✓ Clustered Index | ✓ Via Indexes |
+| **Partitioning** | ✓ DATE/TIMESTAMP/RANGE | ~ Auto Micro | ✗ | ✓ RANGE/LIST/HASH | ✗ |
+| **Clustering** | ✓ Up to 4 cols | ✓ Up to 4 cols | ✗ | ✓ Via Indexes | ✓ Clustered Index |
 | **Distribution** | ✗ | ✗ | ✓ KEY/ALL/EVEN/AUTO | ✗ | ✗ |
 | **Sort Keys** | ✗ | ✗ | ✓ Compound/Interleaved | ✗ | ✗ |
-| **Columnstore** | ✗ | ✗ | ✗ | ✓ Analytics | ✗ |
-| **CREATE OR REPLACE** | ✗ | ✓ Native | ~ via DROP | ~ via DROP | ~ via DROP |
+| **Columnstore** | ✗ | ✗ | ✗ | ✗ | ✓ Analytics |
 
-### Quick Examples
+### Examples
 
 ```python
 from schema_mapper.generators import get_ddl_generator
@@ -482,6 +635,7 @@ ddl = generator.generate(
     dataset_name='analytics',
     partition_by='event_date',
     partition_type='time',
+    partition_expiration_days=365,
     cluster_by=['user_id', 'event_type']
 )
 
@@ -504,451 +658,416 @@ ddl = generator.generate(
     dataset_name='staging',
     cluster_by=['event_date', 'user_id'],
     transient=True,  # For staging tables
-    create_or_replace=True  # Native support
-)
-
-# SQL Server: Clustered Index + Columnstore
-generator = get_ddl_generator('sqlserver')
-ddl = generator.generate(
-    schema=schema,
-    table_name='events',
-    dataset_name='analytics',
-    clustered_index=['event_id'],
-    columnstore=True  # For analytics workloads
-)
-
-# PostgreSQL: Range Partitioned + Clustered
-generator = get_ddl_generator('postgresql')
-ddl = generator.generate(
-    schema=schema,
-    table_name='events',
-    dataset_name='public',
-    partition_by='event_date',
-    partition_type='range',
-    cluster_by=['event_date', 'user_id']  # Creates index
+    create_or_replace=True
 )
 ```
 
-See [examples/production_analytics_pipeline.py](schema-mapper-pkg/examples/production_analytics_pipeline.py) for complete use cases.
+---
 
-### Unified Generator Architecture
+## 🎯 Use Cases
 
-The DDL generator architecture has been consolidated for simplicity and maintainability. The enhanced features (clustering, partitioning, distribution) are now integrated into the base generators.
+### 1. Multi-Cloud Data Migration
 
-**What Changed:**
-- `generators.py` - Unified DDL generation with all features
-- `generators_enhanced.py` - **DEPRECATED** (consolidated into generators.py)
-- All examples and documentation updated to use the unified API
-
-**Migration:**
-```python
-# Old API (still works but deprecated)
-from schema_mapper.generators_enhanced import BigQueryEnhancedDDLGenerator
-
-# New API (recommended)
-from schema_mapper.generators import get_ddl_generator
-generator = get_ddl_generator('bigquery')
-```
-
-### New Renderer Architecture (Canonical Schema)
+**Scenario**: Migrating from AWS (Redshift) to GCP (BigQuery)
 
 ```python
-from schema_mapper.canonical import infer_canonical_schema
+from schema_mapper.connections import ConnectionFactory, ConnectionConfig
 from schema_mapper.renderers import RendererFactory
 
-# Step 1: Create canonical schema (platform-agnostic)
-canonical = infer_canonical_schema(
-    df,
-    table_name='events',
-    dataset_name='analytics',
-    partition_columns=['event_date'],
-    cluster_columns=['user_id', 'event_type']
-)
+config = ConnectionConfig('connections.yaml')
 
-# Step 2: Get platform-specific renderer
-renderer = RendererFactory.get_renderer('bigquery', canonical)
+# Introspect Redshift tables
+with ConnectionFactory.get_connection('redshift', config) as rs_conn:
+    tables = rs_conn.list_tables(schema_name='public')
 
-# Step 3: Generate all artifacts
-ddl = renderer.to_ddl()                          # CREATE TABLE statement
-create_cmd = renderer.to_cli_create()            # CLI command to create
-load_cmd = renderer.to_cli_load('data.csv')     # CLI command to load
+    for table in tables:
+        # Get schema from Redshift
+        schema = rs_conn.get_target_schema(table, schema_name='public')
 
-# BigQuery also supports JSON schema
-if renderer.supports_json_schema():
-    json_schema = renderer.to_schema_json()      # JSON for bq load
+        # Render for BigQuery
+        renderer = RendererFactory.get_renderer('bigquery', schema)
+        bq_ddl = renderer.to_ddl()
 
-# Step 4: Multi-platform generation
-for platform in ['bigquery', 'snowflake', 'redshift', 'postgresql']:
-    renderer = RendererFactory.get_renderer(platform, canonical)
-    print(f"{platform} DDL:", renderer.to_ddl())
+        # Create in BigQuery
+        with ConnectionFactory.get_connection('bigquery', config) as bq_conn:
+            bq_conn.execute_ddl(bq_ddl)
+
+        print(f"✓ Migrated {table}")
 ```
 
-**Benefits:**
-- **One Schema, Many Outputs** - Canonical schema → DDL, JSON, CLI commands
-- **Platform Reality** - JSON only where natively supported (BigQuery)
-- **Clean Architecture** - Renderer pattern, easy to extend
-- **Type Safety** - Logical types converted to physical types per platform
+### 2. ETL Pipeline with Quality Checks
 
-See [examples/canonical_schema_usage.py](schema-mapper-pkg/examples/canonical_schema_usage.py) and [ARCHITECTURE.md](schema-mapper-pkg/ARCHITECTURE.md) for details.
-
-## Type Mapping
-
-| Pandas Type | BigQuery | Snowflake | Redshift | SQL Server | PostgreSQL |
-|-------------|----------|-----------|----------|------------|------------|
-| int64 | INTEGER | NUMBER(38,0) | BIGINT | BIGINT | BIGINT |
-| float64 | FLOAT | FLOAT | DOUBLE PRECISION | FLOAT | DOUBLE PRECISION |
-| object | STRING | VARCHAR(16MB) | VARCHAR(64KB) | NVARCHAR(MAX) | TEXT |
-| datetime64[ns] | TIMESTAMP | TIMESTAMP_NTZ | TIMESTAMP | DATETIME2 | TIMESTAMP |
-| bool | BOOLEAN | BOOLEAN | BOOLEAN | BIT | BOOLEAN |
-
-## API Reference
-
-### `SchemaMapper`
-
-Main class for schema generation.
+**Scenario**: Production ETL with profiling, cleaning, validation
 
 ```python
-mapper = SchemaMapper(target_type='bigquery')
+from schema_mapper import prepare_for_load
+from schema_mapper.connections import ConnectionFactory, ConnectionConfig
+
+# Extract
+df = pd.read_csv('daily_transactions.csv')
+
+# Transform + Profile
+df_clean, schema, issues, report = prepare_for_load(
+    df,
+    'snowflake',
+    profile=True,
+    preprocess_pipeline=[
+        'fix_whitespace',
+        'standardize_column_names',
+        'remove_duplicates',
+        'handle_missing'
+    ],
+    validate=True
+)
+
+# Quality gate
+if report['quality']['overall_score'] < 80:
+    print(f"❌ Quality score too low: {report['quality']['overall_score']}/100")
+    exit(1)
+
+if issues['errors']:
+    print("❌ Validation errors:", issues['errors'])
+    exit(1)
+
+# Load
+config = ConnectionConfig('connections.yaml')
+with ConnectionFactory.get_connection('snowflake', config) as conn:
+    conn.create_table_from_schema(schema, if_not_exists=True)
+    # Load df_clean to Snowflake...
+
+print(f"✓ Loaded {len(df_clean)} rows with quality score {report['quality']['overall_score']}/100")
 ```
 
-**Methods:**
-- `generate_schema(df, ...)` - Generate schema from DataFrame
-- `generate_ddl(df, table_name, ...)` - Generate CREATE TABLE DDL
-- `generate_incremental_ddl(df, table_name, config, ...)` - **NEW!** Generate incremental load DDL (MERGE, SCD2, CDC, etc.)
-- `prepare_dataframe(df, ...)` - Clean and prepare DataFrame
-- `validate_dataframe(df, ...)` - Validate DataFrame quality
-- `generate_bigquery_schema_json(df, ...)` - Generate BigQuery JSON schema
-- `profile_data(df, detailed=True, show_progress=True)` - **NEW!** Generate data quality report
-- `preprocess_data(df, pipeline=None, canonical_schema=None)` - **NEW!** Clean and transform data
+### 3. Incremental UPSERT Pipeline
 
-### `Profiler` (NEW!)
+**Scenario**: Daily UPSERT of customer data
 
-Comprehensive data profiling and quality assessment.
+```python
+from schema_mapper.incremental import IncrementalConfig, LoadPattern, get_incremental_generator
+from schema_mapper.connections import ConnectionFactory, ConnectionConfig
 
+# New/updated customer records
+df = pd.read_csv('customers_delta.csv')
+
+# Generate MERGE DDL
+schema = infer_canonical_schema(df, table_name='customers')
+config_inc = IncrementalConfig(
+    load_pattern=LoadPattern.UPSERT,
+    primary_keys=['customer_id'],
+    update_columns=['email', 'phone', 'address', 'updated_at']
+)
+
+generator = get_incremental_generator('bigquery')
+merge_ddl = generator.generate_incremental_ddl(schema, 'customers', config_inc)
+
+# Execute MERGE
+conn_config = ConnectionConfig('connections.yaml')
+with ConnectionFactory.get_connection('bigquery', conn_config) as conn:
+    conn.execute_ddl(merge_ddl)
+
+print(f"✓ UPSERT complete: {len(df)} customers processed")
+```
+
+### 4. SCD Type 2 Dimension Tracking
+
+**Scenario**: Maintain full history of customer changes
+
+```python
+# Track customer dimension changes with history
+config = IncrementalConfig(
+    load_pattern=LoadPattern.SCD_TYPE2,
+    primary_keys=['customer_id'],
+    scd2_columns=['name', 'address', 'phone', 'email'],
+    effective_date_column='valid_from',
+    end_date_column='valid_to',
+    is_current_column='is_current'
+)
+
+generator = get_incremental_generator('snowflake')
+scd2_ddl = generator.generate_incremental_ddl(schema, 'dim_customers', config)
+
+with ConnectionFactory.get_connection('snowflake', conn_config) as conn:
+    conn.execute_ddl(scd2_ddl)
+
+# Result: Full customer history with versioning
+# customer_id | name  | address | valid_from | valid_to   | is_current
+# ------------|-------|---------|------------|------------|------------
+# 1           | Alice | NYC     | 2024-01-01 | 2024-06-01 | false
+# 1           | Alice | LA      | 2024-06-01 | NULL       | true
+```
+
+---
+
+## 📚 API Reference
+
+### Core Classes
+
+#### `ConnectionFactory`
+```python
+from schema_mapper.connections import ConnectionFactory, ConnectionConfig
+
+config = ConnectionConfig('connections.yaml')
+conn = ConnectionFactory.get_connection('bigquery', config)
+pool = ConnectionFactory.create_pool('bigquery', config, min_size=2, max_size=10)
+```
+
+#### `SchemaMapper`
+```python
+from schema_mapper import SchemaMapper
+
+mapper = SchemaMapper('bigquery')
+schema, mapping = mapper.generate_schema(df)
+ddl = mapper.generate_ddl(df, 'table_name')
+ddl_inc = mapper.generate_incremental_ddl(df, 'table_name', config)
+report = mapper.profile_data(df, detailed=True)
+df_clean = mapper.preprocess_data(df, pipeline=['fix_whitespace', 'remove_duplicates'])
+```
+
+#### `Profiler`
 ```python
 from schema_mapper.profiler import Profiler
 
 profiler = Profiler(df, name='my_dataset')
 report = profiler.generate_report(output_format='dict')
+quality = profiler.assess_quality()
+anomalies = profiler.detect_anomalies(method='iqr')
+patterns = profiler.detect_patterns()
 ```
 
-**Methods:**
-- `profile_dataset()` - Profile entire dataset
-- `profile_column(col_name)` - Profile specific column
-- `assess_quality()` - Calculate quality scores
-- `detect_anomalies(method='iqr')` - Detect outliers
-- `detect_patterns()` - Detect emails, phones, URLs, etc.
-- `analyze_missing_values()` - Analyze missing data
-- `find_correlations()` - Find correlated columns
-- `analyze_distributions()` - Analyze data distributions
-- `generate_report(output_format='dict')` - Generate full report
-
-### `PreProcessor` (NEW!)
-
-Intelligent data cleaning and transformation.
-
+#### `PreProcessor`
 ```python
 from schema_mapper.preprocessor import PreProcessor
 
 preprocessor = PreProcessor(df, canonical_schema=schema)
-df_clean = preprocessor.fix_whitespace().standardize_column_names().apply()
+df_clean = (preprocessor
+    .fix_whitespace()
+    .standardize_column_names()
+    .standardize_dates(columns=['created_at'])
+    .handle_missing(strategy='auto')
+    .apply())
 ```
 
-**Methods:**
-- `fix_whitespace(columns=None, strategy='trim')` - Remove whitespace
-- `standardize_column_names()` - Convert to snake_case
-- `standardize_dates(columns=None, target_format='ISO8601')` - Standardize dates
-- `validate_emails(columns)` - Validate email addresses
-- `validate_phone_numbers(columns)` - Validate phone numbers
-- `remove_duplicates(subset=None, keep='first')` - Remove duplicates
-- `handle_missing(strategy='auto', columns=None)` - Handle missing values
-- `one_hot_encode(columns, drop_original=True)` - One-hot encode categoricals
-- `apply_schema_formats()` - **NEW!** Apply formats from canonical schema
-- `create_pipeline(operations)` - Create preprocessing pipeline
-- `apply()` - Apply all transformations
+### Connection Methods
 
-### `IncrementalConfig` (NEW!)
-
-Configure incremental load patterns.
+All platforms implement:
 
 ```python
-from schema_mapper import IncrementalConfig, LoadPattern, MergeStrategy
+# Lifecycle
+conn.connect()
+conn.disconnect()
+conn.test_connection() -> bool
 
-config = IncrementalConfig(
-    load_pattern=LoadPattern.UPSERT,
-    primary_keys=['user_id'],
-    merge_strategy=MergeStrategy.UPDATE_ALL
-)
+# Introspection
+conn.table_exists(table, schema, database) -> bool
+conn.get_target_schema(table, schema, database) -> CanonicalSchema
+conn.list_tables(schema, database) -> List[str]
+
+# Execution
+conn.execute_ddl(ddl) -> None
+conn.execute_query(query) -> List[Dict]
+conn.create_table_from_schema(schema, if_not_exists) -> None
+
+# Transactions
+conn.begin_transaction()
+conn.commit()
+conn.rollback()
+conn.transaction(isolation_level) -> ContextManager
+conn.savepoint(name)
+conn.rollback_to_savepoint(name)
+
+# Context Manager
+with conn:
+    # Auto-connect/disconnect
+    pass
 ```
 
-**Parameters:**
-- `load_pattern` - LoadPattern enum (UPSERT, SCD_TYPE2, CDC, etc.)
-- `primary_keys` - List of primary key columns
-- `merge_strategy` - MergeStrategy enum (UPDATE_ALL, UPDATE_SELECTIVE, etc.)
-- `update_columns` - Columns to update (for UPDATE_SELECTIVE)
-- `incremental_column` - Column for timestamp-based incremental loads
-- `effective_date_column` - Effective date for SCD Type 2
-- `end_date_column` - End date for SCD Type 2
-- `is_current_column` - Current flag for SCD Type 2
-- `operation_column` - Operation type column for CDC (I/U/D)
-- `lookback_window` - Time window for incremental loads
-
-### `LoadPattern` (NEW!)
-
-Available load patterns:
-- `FULL_REFRESH` - Complete table reload
-- `APPEND_ONLY` - Insert new records only
-- `UPSERT` - Insert new, update existing (MERGE)
-- `DELETE_INSERT` - Delete then insert (transactional)
-- `INCREMENTAL_TIMESTAMP` - Load only recent records
-- `INCREMENTAL_APPEND` - Append only new records (by PK)
-- `SCD_TYPE1` - Current state, no history
-- `SCD_TYPE2` - Full history tracking
-- `CDC` - Change data capture (I/U/D operations)
-- `SNAPSHOT` - Point-in-time snapshots
-
-### `ColumnDefinition` (Enhanced)
-
-Define columns with format specifications.
+### Incremental Load Patterns
 
 ```python
-from schema_mapper.canonical import ColumnDefinition, LogicalType
+from schema_mapper import LoadPattern, IncrementalConfig
 
-col = ColumnDefinition(
-    'event_date',
-    LogicalType.DATE,
-    date_format='%d/%m/%Y',  # NEW!
-    timezone='UTC'           # NEW!
-)
+LoadPattern.UPSERT              # MERGE: Insert new, update existing
+LoadPattern.SCD_TYPE2           # Full history with versioning
+LoadPattern.CDC                 # Change data capture (I/U/D)
+LoadPattern.INCREMENTAL_TIMESTAMP  # Load recent records only
+LoadPattern.APPEND_ONLY         # Insert only, no updates
+LoadPattern.DELETE_INSERT       # Transactional replacement
+LoadPattern.FULL_REFRESH        # Complete reload
+LoadPattern.SCD_TYPE1           # Current state only
+LoadPattern.SNAPSHOT            # Point-in-time captures
 ```
 
-**New Fields:**
-- `date_format` - Python strptime format for temporal types
-- `timezone` - Timezone specification for timestamps
+---
 
-### `prepare_for_load()`
+## 🔧 Configuration
 
-High-level convenience function for complete ETL preparation.
+### YAML Configuration Structure
 
-```python
-df_clean, schema, issues = prepare_for_load(
-    df,
-    target_type='bigquery',
-    standardize_columns=True,
-    auto_cast=True,
-    validate=True,
-    profile=False,              # NEW! Generate quality report
-    preprocess_pipeline=None,   # NEW! Apply preprocessing
-    canonical_schema=None       # NEW! Use canonical schema for date formats
-)
+```yaml
+# connections.yaml
+target: bigquery  # Default platform
+
+connections:
+  bigquery:
+    project: ${GCP_PROJECT_ID}
+    credentials_path: ${BQ_CREDENTIALS_PATH}
+    location: US
+
+  snowflake:
+    account: ${SNOWFLAKE_ACCOUNT}
+    user: ${SNOWFLAKE_USER}
+    password: ${SNOWFLAKE_PASSWORD}
+    warehouse: COMPUTE_WH
+    database: ANALYTICS
+    schema: PUBLIC
+    role: TRANSFORMER
+
+  postgresql:
+    host: ${PG_HOST}
+    port: 5432
+    database: analytics
+    user: ${PG_USER}
+    password: ${PG_PASSWORD}
+
+  redshift:
+    host: ${REDSHIFT_HOST}
+    port: 5439
+    database: analytics
+    user: ${REDSHIFT_USER}
+    password: ${REDSHIFT_PASSWORD}
+
+  sqlserver:
+    server: ${MSSQL_SERVER}
+    database: analytics
+    user: ${MSSQL_USER}
+    password: ${MSSQL_PASSWORD}
+    driver: '{ODBC Driver 17 for SQL Server}'
+
+pooling:
+  enabled: true
+  default:
+    min_size: 2
+    max_size: 10
+  overrides:
+    bigquery:
+      max_size: 5  # Platform-specific override
 ```
 
-**New Parameters:**
-- `profile` - Set to `True` to generate data quality report (returns 4 values instead of 3)
-- `preprocess_pipeline` - List of preprocessing operations to apply (e.g., `['fix_whitespace', 'remove_duplicates']`)
-- `canonical_schema` - CanonicalSchema with date format specifications (formats applied automatically)
+### Environment Variables
 
-### `create_schema()`
-
-Quick schema generation.
-
-```python
-schema = create_schema(df, target_type='bigquery')
-schema, mapping = create_schema(df, target_type='bigquery', return_mapping=True)
-```
-
-## Command-Line Interface
+Create `.env` file:
 
 ```bash
-# Generate BigQuery schema
-schema-mapper input.csv --platform bigquery --output schema.json
+# BigQuery
+GCP_PROJECT_ID=my-gcp-project
+BQ_CREDENTIALS_PATH=/path/to/service-account.json
 
-# Generate DDL
-schema-mapper input.csv --platform snowflake --ddl --table-name customers
+# Snowflake
+SNOWFLAKE_ACCOUNT=abc123
+SNOWFLAKE_USER=svc_etl
+SNOWFLAKE_PASSWORD=********
 
-# Prepare and clean data
-schema-mapper input.csv --platform redshift --prepare --output clean.csv
+# PostgreSQL
+PG_HOST=localhost
+PG_USER=etl_user
+PG_PASSWORD=********
 
-# Validate data
-schema-mapper input.csv --validate
+# Redshift
+REDSHIFT_HOST=my-cluster.redshift.amazonaws.com
+REDSHIFT_USER=etl_user
+REDSHIFT_PASSWORD=********
 
-# Generate for all platforms
-schema-mapper input.csv --platform all --ddl --table-name users
+# SQL Server
+MSSQL_SERVER=my-server.database.windows.net
+MSSQL_USER=etl_user
+MSSQL_PASSWORD=********
 ```
 
-## Running Tests
+---
+
+## 🧪 Testing
 
 ```bash
 # Install dev dependencies
 pip install -e ".[dev]"
 
-# Run tests
-pytest
+# Run unit tests
+pytest tests/connections/ -v
 
 # Run with coverage
-pytest --cov=schema_mapper --cov-report=html
+pytest tests/connections/ --cov=schema_mapper.connections --cov-report=html
+
+# Run integration tests (requires database credentials)
+RUN_INTEGRATION_TESTS=1 pytest tests/integration/ -v
 ```
 
-## Platform Selection Guide
+**Test Coverage:**
+- Configuration system: 78% (30 tests)
+- Retry logic: 95% (26 tests)
+- Integration tests: 65+ tests covering renderers, generators, workflows
 
-| Platform | Best For |
-|----------|----------|
-| **BigQuery** | GCP ecosystem, serverless, real-time analytics |
-| **Snowflake** | Multi-cloud, data sharing, semi-structured data |
-| **Redshift** | AWS ecosystem, cost-effective large-scale |
-| **SQL Server** | Azure/Windows, enterprise Microsoft stack |
-| **PostgreSQL** | Open-source, maximum flexibility, any cloud |
+---
 
-## Type Detection Examples
+## 📖 Examples
 
-```python
-from schema_mapper.utils import detect_and_cast_types
-import pandas as pd
+Explore complete working examples in [`examples/`](examples/):
 
-# Input: All strings
-df = pd.DataFrame({
-    'id': ['1', '2', '3'],
-    'date': ['2024-01-01', '2024-01-02', '2024-01-03'],
-    'active': ['yes', 'no', 'yes'],
-    'price': ['19.99', '29.99', '39.99']
-})
+- [`basic_usage.py`](examples/basic_usage.py) - Simple workflow
+- [`multi_platform.py`](examples/multi_platform.py) - Generate for all platforms
+- [`production_analytics_pipeline.py`](examples/production_analytics_pipeline.py) - Production use case
+- [`canonical_schema_usage.py`](examples/canonical_schema_usage.py) - Canonical schema patterns
+- [`profiler_demo.py`](examples/profiler_demo.py) - Data profiling
+- [`preprocessor_demo.py`](examples/preprocessor_demo.py) - Data cleaning
+- [`connection_examples.py`](examples/connection_examples.py) - **NEW!** Unified connections
 
-# Automatically detect and convert
-df_typed = detect_and_cast_types(df)
+---
 
-print(df_typed.dtypes)
-# id: int64
-# date: datetime64[ns]
-# active: bool
-# price: float64
-```
-
-## Column Standardization
-
-| Original | Standardized |
-|----------|-------------|
-| `User ID#` | `user_id` |
-| `First Name (Legal)` | `first_name_legal` |
-| `Email@Address` | `email_address` |
-| `Account Balance ($)` | `account_balance` |
-| `% Complete` | `complete` |
-| `123InvalidStart` | `_123invalidstart` |
-
-## Data Quality Features
-
-### Profiler Capabilities
-
-The `Profiler` class provides comprehensive data analysis:
-
-**Quality Assessment:**
-- Overall quality score (0-100)
-- Completeness, uniqueness, validity, consistency scores
-- Automated quality interpretation
-
-**Anomaly Detection:**
-- IQR (Interquartile Range) method
-- Z-score method
-- Isolation Forest method
-- Per-column outlier detection
-
-**Pattern Recognition:**
-- Email addresses
-- Phone numbers (US & international)
-- URLs
-- IP addresses
-- Credit card numbers
-- Social Security Numbers
-
-**Statistical Analysis:**
-- Missing value analysis
-- Cardinality analysis
-- Distribution analysis (skewness, kurtosis)
-- Correlation detection
-- Duplicate detection
-
-**Visualization Support:**
-- Distribution plots
-- Correlation heatmaps
-- Missing value visualizations
-- Outlier visualizations
-
-### PreProcessor Capabilities
-
-The `PreProcessor` class provides intelligent data cleaning:
-
-**Text Cleaning:**
-- Whitespace removal (trim, normalize)
-- Case standardization
-- Column name standardization (snake_case)
-- Special character handling
-
-**Data Standardization:**
-- Date format standardization (auto-detection)
-- Email validation and standardization
-- Phone number validation and standardization
-- URL normalization
-
-**Quality Improvement:**
-- Duplicate removal
-- Missing value handling (mean, median, mode, forward/backward fill, KNN imputation)
-- Outlier detection and handling
-- Type casting and conversion
-
-**Data Transformation:**
-- One-hot encoding
-- Label encoding
-- Binning and discretization
-- Custom transformations
-
-**Pipeline Features:**
-- Method chaining for fluent API
-- Transformation logging for reproducibility
-- Schema-aware processing
-- Custom pipeline creation
-
-## Production Status
+## 🏢 Production Status
 
 **Version**: 1.0.0
 **Status**: Production-Ready
-**Test Coverage**: 84-89% (incremental module), expanding coverage across core modules
+**Test Coverage**: 78-95% on core modules
 
-### Recent Improvements (Dec 2024)
+### Platform Support
 
-**Code Quality Enhancements:**
-- Consolidated generator architecture for better maintainability
-- Enhanced incremental load support with comprehensive testing
-- Improved platform-specific renderers (BigQuery, Snowflake, Redshift, PostgreSQL)
-- Added 9 production-ready incremental load patterns
+| Platform | Schema Gen | DDL Gen | Incremental | Connections | Status |
+|----------|------------|---------|-------------|-------------|--------|
+| **BigQuery** | ✓ | ✓ | ✓ | ✓ | Production |
+| **Snowflake** | ✓ | ✓ | ✓ | ✓ | Production |
+| **Redshift** | ✓ | ✓ | ✓ | ✓ | Production |
+| **PostgreSQL** | ✓ | ✓ | ✓ | ✓ | Production |
+| **SQL Server** | ✓ | ✓ | ✓ | ✓ | Production |
 
-**Platform Support:**
-- ✅ BigQuery - Full support with comprehensive tests
-- ✅ Snowflake - Full support with comprehensive tests
-- ✅ Redshift - Full support with comprehensive tests
-- ✅ SQL Server - Full support with comprehensive tests
-- ✅ PostgreSQL - Full support, incremental tests in progress
+### Recent Enhancements (Dec 2024)
 
-**Known Improvements in Progress:**
-- Expanding test coverage to 80%+ across all core modules (see [CODE_REVIEW_2025-12-23.md](CODE_REVIEW_2025-12-23.md))
-- Standardizing logging practices
-- Adding complete type hints to public APIs
+- ✅ **Unified Connection System** - One API for all 5 platforms
+- ✅ **Connection Pooling** - Thread-safe pool management
+- ✅ **Retry Logic** - Exponential backoff with platform-specific error detection
+- ✅ **Schema Introspection** - Read schemas from existing databases
+- ✅ **Transaction Support** - Full ACID support where available
+- ✅ **Comprehensive Testing** - 56 core connection tests, 65+ integration tests
 
-The project is actively maintained and suitable for production use. See the [Code Review Report](CODE_REVIEW_2025-12-23.md) for detailed quality analysis.
+---
 
-## Contributing
+## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+2. Create feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Open Pull Request
 
-## License
+---
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+## 📄 License
 
-## Acknowledgments
+MIT License - see [LICENSE](LICENSE) file for details.
+
+---
+
+## 🙏 Acknowledgments
 
 Built for data engineers working across:
 - Google Cloud Platform (BigQuery)
@@ -957,16 +1076,24 @@ Built for data engineers working across:
 - Microsoft Azure (SQL Server)
 - PostgreSQL (Open Source)
 
-## Related Projects
+---
 
+## 🔗 Resources
+
+**Documentation:**
+- [Incremental Loads Guide](docs/INCREMENTAL_LOADS.md)
+- [Architecture Overview](ARCHITECTURE.md)
+- [Code Review Report](CODE_REVIEW_2025-12-23.md)
+
+**Related Projects:**
 - [pandas](https://pandas.pydata.org/) - Data analysis library
-- [pandas-gbq](https://pandas-gbq.readthedocs.io/) - BigQuery connector
-- [snowflake-connector-python](https://docs.snowflake.com/en/user-guide/python-connector.html) - Snowflake connector
+- [SQLAlchemy](https://www.sqlalchemy.org/) - SQL toolkit
+- [Great Expectations](https://greatexpectations.io/) - Data validation
 
-## Support
-
-For issues, questions, or contributions, please visit the [GitHub repository](https://github.com/datateamsix/schema-mapper).
+**Support:**
+- [GitHub Issues](https://github.com/datateamsix/schema-mapper/issues)
+- [GitHub Discussions](https://github.com/datateamsix/schema-mapper/discussions)
 
 ---
 
-**Made for universal cloud data engineering!**
+**Made with ❤️ for universal cloud data engineering**
