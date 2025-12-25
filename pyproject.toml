@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "schema-mapper"
-version = "1.0.0"
-description = "Universal database schema mapper for BigQuery, Snowflake, Redshift, SQL Server, and PostgreSQL"
+version = "1.2.0"
+description = "Production-grade ETL toolkit with unified connections, intelligent schema management, and built-in metadata for BigQuery, Snowflake, Redshift, SQL Server, and PostgreSQL"
 readme = "README.md"
 authors = [
     {name = "DataTeamSix", email = "research@dt6.io"}
