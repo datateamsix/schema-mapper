@@ -96,22 +96,42 @@ class RedshiftRenderer(SchemaRenderer):
 
     def to_ddl(self) -> str:
         """Generate Redshift CREATE TABLE DDL with distribution/sort keys."""
-        from ..generators_enhanced import get_enhanced_ddl_generator
-        from ..ddl_mappings import DDLOptions, DistributionConfig, SortKeyConfig, DistributionStyle
+        from ..generators import get_ddl_generator
 
-        generator = get_enhanced_ddl_generator('redshift')
+        generator = get_ddl_generator('redshift')
 
         # Convert canonical schema to Redshift schema format
         rs_schema = self._to_redshift_schema_format()
 
-        # Build DDL options
-        ddl_options = self._build_ddl_options()
+        # Extract optimization hints
+        opt = self.schema.optimization
+        distribution_style = None
+        distribution_key = None
+        sort_keys = None
+        interleaved_sort = False
+
+        if opt:
+            # Distribution
+            if opt.distribution_column:
+                distribution_style = 'key'
+                distribution_key = opt.distribution_column
+            else:
+                distribution_style = 'auto'
+
+            # Sort keys (use cluster_columns or sort_columns)
+            sort_cols = opt.sort_columns or opt.cluster_columns
+            if sort_cols:
+                sort_keys = sort_cols
+                interleaved_sort = False  # Default to COMPOUND
 
         return generator.generate(
             schema=rs_schema,
             table_name=self.schema.table_name,
             dataset_name=self.schema.dataset_name,
-            ddl_options=ddl_options
+            distribution_style=distribution_style,
+            distribution_key=distribution_key,
+            sort_keys=sort_keys,
+            interleaved_sort=interleaved_sort
         )
 
     def to_cli_create(self) -> str:
@@ -209,35 +229,6 @@ SELECT COUNT(*) as row_count FROM {full_table};
 
         return schema
 
-    def _build_ddl_options(self) -> Optional['DDLOptions']:
-        """Build DDLOptions from canonical optimization hints."""
-        from ..ddl_mappings import DDLOptions, DistributionConfig, SortKeyConfig, DistributionStyle
-
-        opt = self.schema.optimization
-        if not opt:
-            return None
-
-        ddl_options = DDLOptions()
-
-        # Distribution
-        if opt.distribution_column:
-            ddl_options.distribution = DistributionConfig(
-                style=DistributionStyle.KEY,
-                key_column=opt.distribution_column
-            )
-        else:
-            # Default to AUTO if not specified
-            ddl_options.distribution = DistributionConfig(style=DistributionStyle.AUTO)
-
-        # Sort keys (use cluster_columns or sort_columns)
-        sort_cols = opt.sort_columns or opt.cluster_columns
-        if sort_cols:
-            ddl_options.sort_keys = SortKeyConfig(
-                columns=sort_cols,
-                compound=True  # Default to COMPOUND (better for most use cases)
-            )
-
-        return ddl_options if (ddl_options.distribution or ddl_options.sort_keys) else None
 
 
 __all__ = ['RedshiftRenderer']

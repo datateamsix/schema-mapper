@@ -20,6 +20,7 @@ Automatically generate schemas, DDL statements, and prepare your data for loadin
 - **NULL Handling**: Automatically determines REQUIRED vs NULLABLE
 - **DDL Generation**: Platform-specific CREATE TABLE statements
 - **Table Optimization**: Clustering, partitioning, and distribution strategies
+- **Incremental Loads**: 9 production-ready load patterns (UPSERT, SCD2, CDC, etc.) (NEW!)
 - **Data Profiling**: Comprehensive quality assessment, anomaly detection, pattern recognition (NEW!)
 - **Data Preprocessing**: Intelligent cleaning, transformation, and validation pipelines (NEW!)
 - **Canonical Schema Date Formats**: Define date formats once, apply everywhere (NEW!)
@@ -223,6 +224,77 @@ if not issues['errors']:
     # df_clean.to_gbq('dataset.table', project_id='my-project')
 ```
 
+## Incremental Loads (Production-Ready)
+
+Generate optimized DDL for incremental data loading patterns across all platforms. Perfect for production ETL/ELT pipelines.
+
+### Supported Load Patterns
+
+- **UPSERT (MERGE)** - Insert new, update existing records
+- **SCD Type 2** - Full history tracking with versioning
+- **CDC (Change Data Capture)** - Process insert/update/delete streams
+- **Incremental Timestamp** - Load only recent records
+- **Append Only** - Add new records without updates
+- **Delete-Insert** - Transactional upsert alternative
+- **Full Refresh** - Complete table reload
+- **SCD Type 1** - Current state only, no history
+- **Snapshot** - Point-in-time snapshots with metadata
+
+### Quick Example
+
+```python
+from schema_mapper import SchemaMapper, IncrementalConfig, LoadPattern
+import pandas as pd
+
+df = pd.read_csv('users.csv')
+mapper = SchemaMapper('bigquery')
+
+# Configure UPSERT pattern
+config = IncrementalConfig(
+    load_pattern=LoadPattern.UPSERT,
+    primary_keys=['user_id']
+)
+
+# Generate MERGE DDL
+ddl = mapper.generate_incremental_ddl(
+    df=df,
+    table_name='users',
+    config=config,
+    dataset_name='analytics',
+    project_id='my-project'
+)
+
+print(ddl)
+# Outputs platform-specific MERGE statement
+```
+
+### SCD Type 2 Example
+
+```python
+# Track full history with SCD Type 2
+config = IncrementalConfig(
+    load_pattern=LoadPattern.SCD_TYPE2,
+    primary_keys=['customer_id'],
+    effective_date_column='effective_date',
+    end_date_column='end_date',
+    is_current_column='is_current'
+)
+
+ddl = mapper.generate_incremental_ddl(df, 'customers', config)
+```
+
+### Platform Support
+
+| Pattern | BigQuery | Snowflake | Redshift | SQL Server | PostgreSQL |
+|---------|----------|-----------|----------|------------|------------|
+| UPSERT (MERGE) | ✓ Native | ✓ Native | ✓ Via DELETE+INSERT | ✓ Native | ✓ Native |
+| SCD Type 2 | ✓ | ✓ | ✓ | ✓ | ✓ |
+| CDC | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Incremental Timestamp | ✓ | ✓ | ✓ | ✓ | ✓ |
+| All Patterns | ✓ | ✓ | ✓ | ✓ | ✓ |
+
+**For complete documentation, patterns, and examples**: See [docs/INCREMENTAL_LOADS.md](docs/INCREMENTAL_LOADS.md)
+
 ## Usage Examples
 
 **Complete Example Scripts:**
@@ -275,39 +347,30 @@ ddl = mapper.generate_ddl(df, 'customers', 'public')
 print(ddl)
 ```
 
-### Generate Optimized DDL with Clustering & Partitioning (NEW!)
+### Generate Optimized DDL with Clustering & Partitioning
 
 ```python
-from schema_mapper.generators_enhanced import get_enhanced_ddl_generator
-from schema_mapper.ddl_mappings import (
-    DDLOptions, ClusteringConfig, PartitionConfig, PartitionType
-)
+from schema_mapper.generators import get_ddl_generator
+from schema_mapper import SchemaMapper
 import pandas as pd
 
 df = pd.read_csv('events.csv')
-
-# BigQuery: Partitioned by date, clustered by user_id
-generator = get_enhanced_ddl_generator('bigquery')
-options = DDLOptions(
-    partitioning=PartitionConfig(
-        column='event_date',
-        partition_type=PartitionType.TIME,
-        expiration_days=365
-    ),
-    clustering=ClusteringConfig(columns=['user_id', 'event_type'])
-)
 
 # Generate schema first
 mapper = SchemaMapper('bigquery')
 schema, _ = mapper.generate_schema(df)
 
-# Generate optimized DDL
+# BigQuery: Partitioned by date, clustered by user_id
+generator = get_ddl_generator('bigquery')
 ddl = generator.generate(
     schema=schema,
     table_name='events',
     dataset_name='analytics',
     project_id='my-project',
-    ddl_options=options
+    partition_by='event_date',
+    partition_type='time',
+    partition_expiration_days=365,
+    cluster_by=['user_id', 'event_type']
 )
 
 print(ddl)
@@ -393,49 +456,99 @@ with open('create_customers.sql', 'w') as f:
 print("SUCCESS: Ready for loading!")
 ```
 
-## Table Optimization Features (NEW!)
+## Table Optimization Features
 
 ### Platform Capabilities
 
 | Feature | BigQuery | Snowflake | Redshift | SQL Server | PostgreSQL |
 |---------|----------|-----------|----------|------------|------------|
-| **Partitioning** | ✓ DATE/TIMESTAMP/RANGE | ~ Auto Micro | ✗ | ✓ Function+Scheme | ✓ RANGE/LIST/HASH |
-| **Clustering** | ✓ Up to 4 cols | ✓ Up to 4 cols | ✗ | ✓ Clustered Index | ~ Via Indexes |
+| **Partitioning** | ✓ DATE/TIMESTAMP/RANGE | ~ Auto Micro | ✗ | ✗ | ✓ RANGE/LIST/HASH |
+| **Clustering** | ✓ Up to 4 cols | ✓ Up to 4 cols | ✗ | ✓ Clustered Index | ✓ Via Indexes |
 | **Distribution** | ✗ | ✗ | ✓ KEY/ALL/EVEN/AUTO | ✗ | ✗ |
 | **Sort Keys** | ✗ | ✗ | ✓ Compound/Interleaved | ✗ | ✗ |
+| **Columnstore** | ✗ | ✗ | ✗ | ✓ Analytics | ✗ |
+| **CREATE OR REPLACE** | ✗ | ✓ Native | ~ via DROP | ~ via DROP | ~ via DROP |
 
 ### Quick Examples
 
 ```python
-from schema_mapper.ddl_mappings import *
-from schema_mapper.generators_enhanced import get_enhanced_ddl_generator
+from schema_mapper.generators import get_ddl_generator
 
 # BigQuery: Partitioned + Clustered
-options = DDLOptions(
-    partitioning=PartitionConfig(column='event_date', partition_type=PartitionType.TIME),
-    clustering=ClusteringConfig(columns=['user_id', 'event_type'])
+generator = get_ddl_generator('bigquery')
+ddl = generator.generate(
+    schema=schema,
+    table_name='events',
+    dataset_name='analytics',
+    partition_by='event_date',
+    partition_type='time',
+    cluster_by=['user_id', 'event_type']
 )
 
 # Redshift: Distributed + Sorted
-options = DDLOptions(
-    distribution=DistributionConfig(style=DistributionStyle.KEY, key_column='user_id'),
-    sort_keys=SortKeyConfig(columns=['event_date', 'event_ts'])
+generator = get_ddl_generator('redshift')
+ddl = generator.generate(
+    schema=schema,
+    table_name='events',
+    dataset_name='analytics',
+    distribution_style='key',
+    distribution_key='user_id',
+    sort_keys=['event_date', 'event_ts']
 )
 
-# Snowflake: Clustered
-options = DDLOptions(
-    clustering=ClusteringConfig(columns=['event_date', 'user_id']),
-    transient=True  # For staging tables
+# Snowflake: Clustered + Transient
+generator = get_ddl_generator('snowflake')
+ddl = generator.generate(
+    schema=schema,
+    table_name='staging_events',
+    dataset_name='staging',
+    cluster_by=['event_date', 'user_id'],
+    transient=True,  # For staging tables
+    create_or_replace=True  # Native support
 )
 
-# PostgreSQL: Range Partitioned
-options = DDLOptions(
-    partitioning=PartitionConfig(column='event_date', partition_type=PartitionType.RANGE),
-    clustering=ClusteringConfig(columns=['event_date', 'user_id'])  # Creates index
+# SQL Server: Clustered Index + Columnstore
+generator = get_ddl_generator('sqlserver')
+ddl = generator.generate(
+    schema=schema,
+    table_name='events',
+    dataset_name='analytics',
+    clustered_index=['event_id'],
+    columnstore=True  # For analytics workloads
+)
+
+# PostgreSQL: Range Partitioned + Clustered
+generator = get_ddl_generator('postgresql')
+ddl = generator.generate(
+    schema=schema,
+    table_name='events',
+    dataset_name='public',
+    partition_by='event_date',
+    partition_type='range',
+    cluster_by=['event_date', 'user_id']  # Creates index
 )
 ```
 
-See [examples/production_analytics_pipeline.py](schema-mapper-pkg/examples/production_analytics_pipeline.py) for a complete use case.
+See [examples/production_analytics_pipeline.py](schema-mapper-pkg/examples/production_analytics_pipeline.py) for complete use cases.
+
+### Unified Generator Architecture
+
+The DDL generator architecture has been consolidated for simplicity and maintainability. The enhanced features (clustering, partitioning, distribution) are now integrated into the base generators.
+
+**What Changed:**
+- `generators.py` - Unified DDL generation with all features
+- `generators_enhanced.py` - **DEPRECATED** (consolidated into generators.py)
+- All examples and documentation updated to use the unified API
+
+**Migration:**
+```python
+# Old API (still works but deprecated)
+from schema_mapper.generators_enhanced import BigQueryEnhancedDDLGenerator
+
+# New API (recommended)
+from schema_mapper.generators import get_ddl_generator
+generator = get_ddl_generator('bigquery')
+```
 
 ### New Renderer Architecture (Canonical Schema)
 
@@ -501,6 +614,7 @@ mapper = SchemaMapper(target_type='bigquery')
 **Methods:**
 - `generate_schema(df, ...)` - Generate schema from DataFrame
 - `generate_ddl(df, table_name, ...)` - Generate CREATE TABLE DDL
+- `generate_incremental_ddl(df, table_name, config, ...)` - **NEW!** Generate incremental load DDL (MERGE, SCD2, CDC, etc.)
 - `prepare_dataframe(df, ...)` - Clean and prepare DataFrame
 - `validate_dataframe(df, ...)` - Validate DataFrame quality
 - `generate_bigquery_schema_json(df, ...)` - Generate BigQuery JSON schema
@@ -552,6 +666,46 @@ df_clean = preprocessor.fix_whitespace().standardize_column_names().apply()
 - `apply_schema_formats()` - **NEW!** Apply formats from canonical schema
 - `create_pipeline(operations)` - Create preprocessing pipeline
 - `apply()` - Apply all transformations
+
+### `IncrementalConfig` (NEW!)
+
+Configure incremental load patterns.
+
+```python
+from schema_mapper import IncrementalConfig, LoadPattern, MergeStrategy
+
+config = IncrementalConfig(
+    load_pattern=LoadPattern.UPSERT,
+    primary_keys=['user_id'],
+    merge_strategy=MergeStrategy.UPDATE_ALL
+)
+```
+
+**Parameters:**
+- `load_pattern` - LoadPattern enum (UPSERT, SCD_TYPE2, CDC, etc.)
+- `primary_keys` - List of primary key columns
+- `merge_strategy` - MergeStrategy enum (UPDATE_ALL, UPDATE_SELECTIVE, etc.)
+- `update_columns` - Columns to update (for UPDATE_SELECTIVE)
+- `incremental_column` - Column for timestamp-based incremental loads
+- `effective_date_column` - Effective date for SCD Type 2
+- `end_date_column` - End date for SCD Type 2
+- `is_current_column` - Current flag for SCD Type 2
+- `operation_column` - Operation type column for CDC (I/U/D)
+- `lookback_window` - Time window for incremental loads
+
+### `LoadPattern` (NEW!)
+
+Available load patterns:
+- `FULL_REFRESH` - Complete table reload
+- `APPEND_ONLY` - Insert new records only
+- `UPSERT` - Insert new, update existing (MERGE)
+- `DELETE_INSERT` - Delete then insert (transactional)
+- `INCREMENTAL_TIMESTAMP` - Load only recent records
+- `INCREMENTAL_APPEND` - Append only new records (by PK)
+- `SCD_TYPE1` - Current state, no history
+- `SCD_TYPE2` - Full history tracking
+- `CDC` - Change data capture (I/U/D operations)
+- `SNAPSHOT` - Point-in-time snapshots
 
 ### `ColumnDefinition` (Enhanced)
 
@@ -751,6 +905,34 @@ The `PreProcessor` class provides intelligent data cleaning:
 - Transformation logging for reproducibility
 - Schema-aware processing
 - Custom pipeline creation
+
+## Production Status
+
+**Version**: 1.0.0
+**Status**: Production-Ready
+**Test Coverage**: 84-89% (incremental module), expanding coverage across core modules
+
+### Recent Improvements (Dec 2024)
+
+**Code Quality Enhancements:**
+- Consolidated generator architecture for better maintainability
+- Enhanced incremental load support with comprehensive testing
+- Improved platform-specific renderers (BigQuery, Snowflake, Redshift, PostgreSQL)
+- Added 9 production-ready incremental load patterns
+
+**Platform Support:**
+- ✅ BigQuery - Full support with comprehensive tests
+- ✅ Snowflake - Full support with comprehensive tests
+- ✅ Redshift - Full support with comprehensive tests
+- ✅ SQL Server - Full support with comprehensive tests
+- ✅ PostgreSQL - Full support, incremental tests in progress
+
+**Known Improvements in Progress:**
+- Expanding test coverage to 80%+ across all core modules (see [CODE_REVIEW_2025-12-23.md](CODE_REVIEW_2025-12-23.md))
+- Standardizing logging practices
+- Adding complete type hints to public APIs
+
+The project is actively maintained and suitable for production use. See the [Code Review Report](CODE_REVIEW_2025-12-23.md) for detailed quality analysis.
 
 ## Contributing
 

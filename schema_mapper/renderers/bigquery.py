@@ -130,25 +130,52 @@ class BigQueryRenderer(SchemaRenderer):
         """
         Generate BigQuery CREATE TABLE DDL with partitioning/clustering.
 
-        Uses the enhanced DDL generator for complete support.
+        Uses the unified DDL generator with simplified API.
         """
-        from ..generators_enhanced import get_enhanced_ddl_generator
-        from ..ddl_mappings import DDLOptions, ClusteringConfig, PartitionConfig, PartitionType
+        from ..generators import get_ddl_generator
 
-        generator = get_enhanced_ddl_generator('bigquery')
+        generator = get_ddl_generator('bigquery')
 
         # Convert canonical schema to BigQuery schema format
         bq_schema = self._to_bigquery_schema_format()
 
-        # Build DDL options
-        ddl_options = self._build_ddl_options()
+        # Extract optimization hints
+        opt = self.schema.optimization
+        cluster_by = None
+        partition_by = None
+        partition_type = 'time'
+        partition_expiration_days = None
+        require_partition_filter = False
+
+        if opt and opt.has_optimizations():
+            # Clustering
+            if opt.cluster_columns:
+                cluster_by = opt.cluster_columns
+
+            # Partitioning
+            if opt.partition_columns:
+                partition_by = opt.partition_columns[0]
+                col_def = self.schema.get_column(partition_by)
+
+                # Determine partition type from column type
+                if col_def and col_def.logical_type == LogicalType.INTEGER:
+                    partition_type = 'range'
+                else:
+                    partition_type = 'time'
+
+                partition_expiration_days = opt.partition_expiration_days
+                require_partition_filter = opt.require_partition_filter
 
         return generator.generate(
             schema=bq_schema,
             table_name=self.schema.table_name,
             dataset_name=self.schema.dataset_name,
             project_id=self.schema.project_id,
-            ddl_options=ddl_options
+            cluster_by=cluster_by,
+            partition_by=partition_by,
+            partition_type=partition_type,
+            partition_expiration_days=partition_expiration_days,
+            require_partition_filter=require_partition_filter
         )
 
     def to_cli_create(self) -> str:
@@ -261,38 +288,6 @@ rm /tmp/bq_schema.json'''
 
         return schema
 
-    def _build_ddl_options(self) -> Optional['DDLOptions']:
-        """Build DDLOptions from canonical optimization hints."""
-        from ..ddl_mappings import DDLOptions, ClusteringConfig, PartitionConfig, PartitionType
-
-        opt = self.schema.optimization
-        if not opt or not opt.has_optimizations():
-            return None
-
-        ddl_options = DDLOptions()
-
-        # Clustering
-        if opt.cluster_columns:
-            ddl_options.clustering = ClusteringConfig(columns=opt.cluster_columns)
-
-        # Partitioning
-        if opt.partition_columns:
-            partition_col = opt.partition_columns[0]
-            col_def = self.schema.get_column(partition_col)
-
-            # Determine partition type from column type
-            partition_type = PartitionType.TIME
-            if col_def and col_def.logical_type == LogicalType.INTEGER:
-                partition_type = PartitionType.RANGE
-
-            ddl_options.partitioning = PartitionConfig(
-                column=partition_col,
-                partition_type=partition_type,
-                expiration_days=opt.partition_expiration_days,
-                require_partition_filter=opt.require_partition_filter
-            )
-
-        return ddl_options
 
 
 __all__ = ['BigQueryRenderer']

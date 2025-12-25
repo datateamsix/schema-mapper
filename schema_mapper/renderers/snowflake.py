@@ -97,22 +97,29 @@ class SnowflakeRenderer(SchemaRenderer):
 
     def to_ddl(self) -> str:
         """Generate Snowflake CREATE TABLE DDL with clustering."""
-        from ..generators_enhanced import get_enhanced_ddl_generator
-        from ..ddl_mappings import DDLOptions, ClusteringConfig
+        from ..generators import get_ddl_generator
 
-        generator = get_enhanced_ddl_generator('snowflake')
+        generator = get_ddl_generator('snowflake')
 
         # Convert canonical schema to Snowflake schema format
         sf_schema = self._to_snowflake_schema_format()
 
-        # Build DDL options
-        ddl_options = self._build_ddl_options()
+        # Extract optimization hints
+        opt = self.schema.optimization
+        cluster_by = None
+        transient = False
+
+        if opt:
+            if opt.cluster_columns:
+                cluster_by = opt.cluster_columns
+            transient = opt.transient
 
         return generator.generate(
             schema=sf_schema,
             table_name=self.schema.table_name,
             dataset_name=self.schema.dataset_name,
-            ddl_options=ddl_options
+            cluster_by=cluster_by,
+            transient=transient
         )
 
     def to_cli_create(self) -> str:
@@ -186,24 +193,6 @@ class SnowflakeRenderer(SchemaRenderer):
 
         return schema
 
-    def _build_ddl_options(self) -> Optional['DDLOptions']:
-        """Build DDLOptions from canonical optimization hints."""
-        from ..ddl_mappings import DDLOptions, ClusteringConfig
-
-        opt = self.schema.optimization
-        if not opt:
-            return None
-
-        ddl_options = DDLOptions()
-
-        # Clustering
-        if opt.cluster_columns:
-            ddl_options.clustering = ClusteringConfig(columns=opt.cluster_columns)
-
-        # Transient flag
-        ddl_options.transient = opt.transient
-
-        return ddl_options if (ddl_options.clustering or ddl_options.transient) else None
 
 
 __all__ = ['SnowflakeRenderer']

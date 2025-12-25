@@ -90,30 +90,43 @@ class PostgreSQLRenderer(SchemaRenderer):
 
     def to_ddl(self) -> str:
         """Generate PostgreSQL CREATE TABLE DDL with partitioning."""
-        from ..generators_enhanced import get_enhanced_ddl_generator
-        from ..ddl_mappings import DDLOptions, ClusteringConfig, PartitionConfig, PartitionType
+        from ..generators import get_ddl_generator
 
-        generator = get_enhanced_ddl_generator('postgresql')
+        generator = get_ddl_generator('postgresql')
 
         # Convert canonical schema to PostgreSQL schema format
         pg_schema = self._to_postgresql_schema_format()
 
-        # Build DDL options
-        ddl_options = self._build_ddl_options()
+        # Extract optimization hints
+        opt = self.schema.optimization
+        partition_by = None
+        partition_type = 'range'
+        cluster_by = None
+
+        if opt:
+            # Partitioning
+            if opt.partition_columns:
+                partition_by = opt.partition_columns[0]
+                partition_type = 'range'  # Default to RANGE (most common)
+
+            # Clustering (via indexes)
+            if opt.cluster_columns:
+                cluster_by = opt.cluster_columns
 
         ddl = generator.generate(
             schema=pg_schema,
             table_name=self.schema.table_name,
             dataset_name=self.schema.dataset_name,
-            ddl_options=ddl_options
+            partition_by=partition_by,
+            partition_type=partition_type,
+            cluster_by=cluster_by
         )
 
         # Add partition creation hints
-        if self.schema.optimization and self.schema.optimization.partition_columns:
+        if partition_by:
             ddl += "\n\n-- Note: Create child partitions separately"
             ddl += "\n-- Example for RANGE partitioning:"
             full_table = f'"{self.schema.dataset_name}"."{self.schema.table_name}"' if self.schema.dataset_name else f'"{self.schema.table_name}"'
-            partition_col = self.schema.optimization.partition_columns[0]
             ddl += f"\n-- CREATE TABLE {self.schema.table_name}_2024_q1 PARTITION OF {full_table}"
             ddl += f"\n--   FOR VALUES FROM ('2024-01-01') TO ('2024-04-01');"
 
@@ -192,29 +205,6 @@ SELECT COUNT(*) as row_count FROM {full_table};
 
         return schema
 
-    def _build_ddl_options(self) -> Optional['DDLOptions']:
-        """Build DDLOptions from canonical optimization hints."""
-        from ..ddl_mappings import DDLOptions, ClusteringConfig, PartitionConfig, PartitionType
-
-        opt = self.schema.optimization
-        if not opt:
-            return None
-
-        ddl_options = DDLOptions()
-
-        # Partitioning
-        if opt.partition_columns:
-            # Default to RANGE partitioning (most common)
-            ddl_options.partitioning = PartitionConfig(
-                column=opt.partition_columns[0],
-                partition_type=PartitionType.RANGE
-            )
-
-        # Clustering (via indexes)
-        if opt.cluster_columns:
-            ddl_options.clustering = ClusteringConfig(columns=opt.cluster_columns)
-
-        return ddl_options if (ddl_options.partitioning or ddl_options.clustering) else None
 
 
 __all__ = ['PostgreSQLRenderer']
