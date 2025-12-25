@@ -48,9 +48,16 @@ Production-ready examples demonstrating schema-mapper's unified connection syste
 
 7. **[07_connection_pooling.py](07_connection_pooling.py)** - Connection Pooling
    - Multi-threaded workloads
-   - Pool configuration
-   - Performance optimization
+   - Pool management and statistics
    - **Time: 10 minutes**
+
+8. **[08_metadata_data_dictionary.py](08_metadata_data_dictionary.py)** - Metadata & Data Dictionary Framework
+   - Schema + Metadata as single source of truth
+   - Enrich with descriptions, PII flags, tags
+   - YAML-driven schema definitions
+   - Export data dictionaries (Markdown, CSV, JSON)
+   - Metadata validation and governance
+   - **Time: 20 minutes** | **NEW FRAMEWORK**
 
 ## 🚀 Quick Start
 

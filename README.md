@@ -112,6 +112,15 @@ with ConnectionFactory.get_connection('bigquery', config) as conn:
 - **Duplicate removal** - Smart deduplication strategies
 - **Transformation logging** - Full audit trail
 
+### 📚 **Metadata & Data Dictionary Framework** (NEW!)
+- **Schema = Structure + Meaning** - Metadata as first-class citizen
+- **YAML-driven schemas** - Version control for schemas + metadata
+- **Data dictionary exports** - Markdown, CSV, JSON formats
+- **PII governance** - Built-in PII flags for compliance
+- **Metadata validation** - Enforce required fields (description, owner, etc.)
+- **Documentation generation** - Never write docs twice
+- **Bidirectional metadata** - Read from and write to databases
+
 ---
 
 ## 📦 Installation
@@ -1022,6 +1031,7 @@ Explore complete, production-ready examples in [`examples/`](examples/):
 ### Production Integration
 - [`06_prefect_orchestration.py`](examples/06_prefect_orchestration.py) - 🌟 **Prefect orchestration** with tagged stages, quality gates, and artifacts (20 min)
 - [`07_connection_pooling.py`](examples/07_connection_pooling.py) - Connection pooling for high-concurrency workloads (10 min)
+- [`08_metadata_data_dictionary.py`](examples/08_metadata_data_dictionary.py) - **Metadata & Data Dictionary Framework** - YAML schemas, PII governance, auto-generated docs (20 min)
 
 **📚 See [`examples/README.md`](examples/README.md)** for setup instructions, configuration templates, and learning path.
 

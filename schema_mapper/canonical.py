@@ -40,6 +40,11 @@ class ColumnDefinition:
     nullable: bool = True
     description: Optional[str] = None
 
+    # Governance and business metadata
+    source: Optional[str] = None  # Data source (e.g., 'client_sdk', 'server', 'etl')
+    pii: bool = False  # Contains personally identifiable information
+    tags: List[str] = field(default_factory=list)  # Business/technical tags
+
     # Type parameters (platform-agnostic)
     max_length: Optional[int] = None  # For STRING/VARCHAR
     precision: Optional[int] = None   # For DECIMAL
@@ -171,6 +176,9 @@ class CanonicalSchema:
 
     # Metadata
     description: Optional[str] = None
+    owner: Optional[str] = None  # Team or person responsible (e.g., 'analytics', 'data-eng')
+    domain: Optional[str] = None  # Business domain (e.g., 'product_analytics', 'finance')
+    tags: List[str] = field(default_factory=list)  # Business/technical tags
     created_from: Optional[str] = None  # e.g., "CSV", "DataFrame", "Manual"
 
     def __post_init__(self):
@@ -239,6 +247,186 @@ class CanonicalSchema:
                     )
 
         return errors
+
+    def validate_metadata(
+        self,
+        required_table_fields: Optional[List[str]] = None,
+        required_column_fields: Optional[List[str]] = None
+    ) -> List[str]:
+        """
+        Validate that required metadata fields are populated.
+
+        This enforces the metadata contract - ensuring that documentation
+        and governance metadata is present before deployment.
+
+        Args:
+            required_table_fields: Table-level fields that must be non-null/non-empty
+                                  (e.g., ['description', 'owner'])
+            required_column_fields: Column-level fields that must be non-null/non-empty
+                                   (e.g., ['description', 'pii'])
+
+        Returns:
+            List of error messages (empty if valid)
+
+        Example:
+            >>> errors = schema.validate_metadata(
+            ...     required_table_fields=['description', 'owner'],
+            ...     required_column_fields=['description', 'pii']
+            ... )
+            >>> if errors:
+            ...     raise ValueError(f"Metadata validation failed: {errors}")
+        """
+        errors = []
+
+        # Validate table-level metadata
+        if required_table_fields:
+            for field in required_table_fields:
+                value = getattr(self, field, None)
+                if value is None or (isinstance(value, str) and not value.strip()):
+                    errors.append(f"Table '{self.table_name}': missing required field '{field}'")
+
+        # Validate column-level metadata
+        if required_column_fields:
+            for col in self.columns:
+                for field in required_column_fields:
+                    value = getattr(col, field, None)
+                    # For 'pii' field, None is different from False - we require explicit False
+                    if field == 'pii':
+                        if value is None:
+                            errors.append(
+                                f"Column '{col.name}': 'pii' field must be explicitly set (True/False)"
+                            )
+                    elif value is None or (isinstance(value, str) and not value.strip()):
+                        errors.append(f"Column '{col.name}': missing required field '{field}'")
+
+        return errors
+
+    def export_data_dictionary(self, format: str = "markdown") -> str:
+        """
+        Export schema as a data dictionary in various formats.
+
+        This generates human-readable documentation directly from the
+        canonical schema, ensuring documentation never drifts from reality.
+
+        Args:
+            format: Output format - 'markdown', 'csv', or 'json'
+
+        Returns:
+            Formatted data dictionary string
+
+        Raises:
+            ValueError: If format is not supported
+
+        Example:
+            >>> # Export as markdown table
+            >>> md = schema.export_data_dictionary('markdown')
+            >>> with open('data_dictionary.md', 'w') as f:
+            ...     f.write(md)
+        """
+        if format == "markdown":
+            return self._export_markdown()
+        elif format == "csv":
+            return self._export_csv()
+        elif format == "json":
+            import json
+            return json.dumps(canonical_schema_to_dict(self), indent=2)
+        else:
+            raise ValueError(f"Unsupported format: {format}. Use 'markdown', 'csv', or 'json'")
+
+    def _export_markdown(self) -> str:
+        """Export data dictionary as Markdown table."""
+        lines = []
+
+        # Table header
+        table_id = f"{self.dataset_name}.{self.table_name}" if self.dataset_name else self.table_name
+        lines.append(f"# Data Dictionary: {table_id}\n")
+
+        # Table metadata
+        if self.description:
+            lines.append(f"**Description**: {self.description}\n")
+        if self.owner:
+            lines.append(f"**Owner**: {self.owner}\n")
+        if self.domain:
+            lines.append(f"**Domain**: {self.domain}\n")
+        if self.tags:
+            lines.append(f"**Tags**: {', '.join(self.tags)}\n")
+
+        lines.append("")  # Blank line
+
+        # Column table header
+        lines.append("## Columns\n")
+        lines.append("| Column | Type | Nullable | Description | Source | PII | Tags |")
+        lines.append("|--------|------|----------|-------------|--------|-----|------|")
+
+        # Column rows
+        for col in self.columns:
+            type_str = col.logical_type.value.upper()
+            if col.max_length:
+                type_str += f"({col.max_length})"
+            elif col.precision and col.scale:
+                type_str += f"({col.precision},{col.scale})"
+
+            nullable_str = "Yes" if col.nullable else "No"
+            description = col.description or "-"
+            source = col.source or "-"
+            pii_str = "Yes" if col.pii else "No"
+            tags_str = ", ".join(col.tags) if col.tags else "-"
+
+            lines.append(
+                f"| {col.name} | {type_str} | {nullable_str} | {description} | "
+                f"{source} | {pii_str} | {tags_str} |"
+            )
+
+        return "\n".join(lines)
+
+    def _export_csv(self) -> str:
+        """Export data dictionary as CSV."""
+        import csv
+        from io import StringIO
+
+        output = StringIO()
+        writer = csv.writer(output)
+
+        # Write table metadata rows
+        table_id = f"{self.dataset_name}.{self.table_name}" if self.dataset_name else self.table_name
+        writer.writerow(['Table', table_id])
+        if self.description:
+            writer.writerow(['Description', self.description])
+        if self.owner:
+            writer.writerow(['Owner', self.owner])
+        if self.domain:
+            writer.writerow(['Domain', self.domain])
+        if self.tags:
+            writer.writerow(['Tags', ', '.join(self.tags)])
+
+        # Blank row
+        writer.writerow([])
+
+        # Column header
+        writer.writerow(['Column', 'Type', 'Nullable', 'Description', 'Source', 'PII', 'Tags'])
+
+        # Column rows
+        for col in self.columns:
+            type_str = col.logical_type.value.upper()
+            if col.max_length:
+                type_str += f"({col.max_length})"
+            elif col.precision and col.scale:
+                type_str += f"({col.precision},{col.scale})"
+
+            nullable_str = "Yes" if col.nullable else "No"
+            pii_str = "Yes" if col.pii else "No"
+
+            writer.writerow([
+                col.name,
+                type_str,
+                nullable_str,
+                col.description or "",
+                col.source or "",
+                pii_str,
+                ', '.join(col.tags) if col.tags else ""
+            ])
+
+        return output.getvalue()
 
     def __str__(self):
         """Human-readable representation."""
@@ -423,8 +611,11 @@ def canonical_schema_to_dict(schema: CanonicalSchema) -> Dict:
             {
                 "name": col.name,
                 "logical_type": col.logical_type.value,
-                "nullable": col.nullable,
+                "nullable": bool(col.nullable),  # Convert to Python bool (handles numpy)
                 "description": col.description,
+                "source": col.source,
+                "pii": bool(col.pii),  # Convert to Python bool
+                "tags": col.tags,
                 "max_length": col.max_length,
                 "precision": col.precision,
                 "scale": col.scale,
@@ -443,6 +634,9 @@ def canonical_schema_to_dict(schema: CanonicalSchema) -> Dict:
             "transient": schema.optimization.transient,
         } if schema.optimization else None,
         "description": schema.description,
+        "owner": schema.owner,
+        "domain": schema.domain,
+        "tags": schema.tags,
         "created_from": schema.created_from,
     }
 

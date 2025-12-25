@@ -33,6 +33,22 @@ from .validation_rules import ValidationRules
 from .preprocessor import PreProcessor
 from .visualization import DataVisualizer
 
+# Canonical schema and metadata
+from .canonical import (
+    CanonicalSchema,
+    ColumnDefinition,
+    LogicalType,
+    OptimizationHints,
+    infer_canonical_schema,
+    canonical_schema_to_dict,
+)
+
+# YAML schema support
+from .yaml_schema import (
+    load_schema_from_yaml,
+    save_schema_to_yaml,
+)
+
 # Incremental load functionality
 from .incremental import (
     LoadPattern,
@@ -64,6 +80,16 @@ __all__ = [
     'validate_dataframe',
     'standardize_column_name',
     '__version__',
+    # Canonical schema and metadata
+    'CanonicalSchema',
+    'ColumnDefinition',
+    'LogicalType',
+    'OptimizationHints',
+    'infer_canonical_schema',
+    'canonical_schema_to_dict',
+    # YAML schema support
+    'load_schema_from_yaml',
+    'save_schema_to_yaml',
     # Incremental load functionality
     'LoadPattern',
     'MergeStrategy',
