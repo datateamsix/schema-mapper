@@ -59,9 +59,36 @@ connections:
     # encrypt: yes
     # trust_server_certificate: no
 
+# ==================== CONNECTION POOLING ====================
+# Optional: Configure connection pooling for high-concurrency workloads
+# Useful for web APIs, parallel pipeline tasks, and long-running services
+
+pooling:
+  # Enable pooling globally (default: false)
+  enabled: false
+
+  # Default pool settings (can be overridden per platform)
+  default:
+    min_size: 2                    # Minimum connections to maintain
+    max_size: 10                   # Maximum concurrent connections
+    max_idle_seconds: 300          # Close idle connections after 5 minutes
+    max_lifetime_seconds: 3600     # Recycle connections after 1 hour
+    validate_on_checkout: true     # Health check before reuse
+    wait_timeout: 30               # Max wait time for connection (seconds)
+
+  # Platform-specific pool overrides (optional)
+  snowflake:
+    min_size: 3
+    max_size: 15
+    max_lifetime_seconds: 1800     # Recycle Snowflake connections more frequently
+
+  bigquery:
+    min_size: 1
+    max_size: 5                    # BigQuery has lower connection overhead
+
 # ==================== USAGE EXAMPLES ====================
 #
-# From Python:
+# Basic connection:
 #   from schema_mapper.connections import ConnectionConfig, ConnectionFactory
 #
 #   config = ConnectionConfig('connections.yaml')
@@ -71,6 +98,28 @@ connections:
 #
 # Using default target:
 #   conn = ConnectionFactory.get_connection_from_config(config)  # Uses 'target' from YAML
+#
+# Connection pooling (for concurrent workloads):
+#   from schema_mapper.connections import ConnectionFactory
+#
+#   # Create pool
+#   pool = ConnectionFactory.create_pool(
+#       'snowflake',
+#       config,
+#       min_size=2,
+#       max_size=10
+#   )
+#
+#   # Use pool in concurrent tasks
+#   with pool.get_connection() as conn:
+#       schema = conn.get_target_schema('users')
+#
+#   # Get pool statistics
+#   stats = pool.get_stats()
+#   print(f"Active: {stats['active_connections']}, Idle: {stats['idle_connections']}")
+#
+#   # Clean up
+#   pool.close()
 #
 # From dictionary (no YAML):
 #   conn = ConnectionFactory.get_connection('bigquery', {

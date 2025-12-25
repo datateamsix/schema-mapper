@@ -37,6 +37,7 @@ Examples:
 from .base import BaseConnection, ConnectionState
 from .config import ConnectionConfig
 from .factory import ConnectionFactory, get_connection
+from .utils.pooling import ConnectionPool
 from .exceptions import (
     ConnectionError,
     ConfigurationError,
@@ -57,6 +58,7 @@ __all__ = [
     'ConnectionState',
     'ConnectionConfig',
     'ConnectionFactory',
+    'ConnectionPool',
     'get_connection',
     # Exceptions
     'ConnectionError',

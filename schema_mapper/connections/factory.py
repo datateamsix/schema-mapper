@@ -263,6 +263,70 @@ class ConnectionFactory:
         return platform.lower() in cls._connectors
 
     @classmethod
+    def create_pool(
+        cls,
+        target: str,
+        config: Optional[Union[ConnectionConfig, Dict[str, Any]]] = None,
+        min_size: int = 2,
+        max_size: int = 10,
+        max_idle_seconds: int = 300,
+        max_lifetime_seconds: int = 3600,
+        validate_on_checkout: bool = True,
+        wait_timeout: int = 30,
+    ):
+        """
+        Create a connection pool for a platform.
+
+        Args:
+            target: Platform name
+            config: Configuration for connections
+            min_size: Minimum pool size (default: 2)
+            max_size: Maximum pool size (default: 10)
+            max_idle_seconds: Max idle time before cleanup (default: 300)
+            max_lifetime_seconds: Max connection lifetime (default: 3600)
+            validate_on_checkout: Validate connections before use (default: True)
+            wait_timeout: Max wait time for connection (default: 30)
+
+        Returns:
+            ConnectionPool instance
+
+        Raises:
+            ValueError: If target platform not supported
+            ConfigurationError: If configuration is invalid
+
+        Examples:
+            >>> pool = ConnectionFactory.create_pool(
+            ...     'bigquery',
+            ...     config={'project': 'my-project'},
+            ...     min_size=2,
+            ...     max_size=10
+            ... )
+
+            >>> with pool.get_connection() as conn:
+            ...     schema = conn.get_target_schema('users')
+
+            >>> pool.close()
+        """
+        from .utils.pooling import ConnectionPool
+
+        # Create connection factory function
+        def connection_factory():
+            return cls.get_connection(target, config)
+
+        # Create pool
+        pool = ConnectionPool(
+            connection_factory=connection_factory,
+            min_size=min_size,
+            max_size=max_size,
+            max_idle_seconds=max_idle_seconds,
+            max_lifetime_seconds=max_lifetime_seconds,
+            validate_on_checkout=validate_on_checkout,
+            wait_timeout=wait_timeout,
+        )
+
+        return pool
+
+    @classmethod
     def register_connector(
         cls,
         platform: str,
