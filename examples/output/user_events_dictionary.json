@@ -1,0 +1,166 @@
+{
+  "table_name": "user_events",
+  "dataset_name": "analytics",
+  "project_id": null,
+  "columns": [
+    {
+      "name": "event_id",
+      "logical_type": "string",
+      "nullable": false,
+      "description": "Unique identifier for the event",
+      "source": "client_sdk",
+      "pii": false,
+      "tags": [
+        "identifier",
+        "primary_key"
+      ],
+      "max_length": 255,
+      "precision": null,
+      "scale": null,
+      "original_name": "event_id",
+      "pandas_dtype": "object"
+    },
+    {
+      "name": "user_id",
+      "logical_type": "bigint",
+      "nullable": false,
+      "description": "User identifier (hashed for privacy)",
+      "source": "client_sdk",
+      "pii": false,
+      "tags": [
+        "identifier",
+        "foreign_key"
+      ],
+      "max_length": null,
+      "precision": null,
+      "scale": null,
+      "original_name": "user_id",
+      "pandas_dtype": "int64"
+    },
+    {
+      "name": "email",
+      "logical_type": "string",
+      "nullable": false,
+      "description": "User email address",
+      "source": "user_profile",
+      "pii": true,
+      "tags": [
+        "contact",
+        "sensitive"
+      ],
+      "max_length": 255,
+      "precision": null,
+      "scale": null,
+      "original_name": "email",
+      "pandas_dtype": "object"
+    },
+    {
+      "name": "event_type",
+      "logical_type": "string",
+      "nullable": false,
+      "description": "Type of user interaction (page_view, button_click, etc.)",
+      "source": "client_sdk",
+      "pii": false,
+      "tags": [
+        "categorical",
+        "event_classification"
+      ],
+      "max_length": 255,
+      "precision": null,
+      "scale": null,
+      "original_name": "event_type",
+      "pandas_dtype": "object"
+    },
+    {
+      "name": "event_date",
+      "logical_type": "timestamp",
+      "nullable": false,
+      "description": "Date when the event occurred (UTC)",
+      "source": "server",
+      "pii": false,
+      "tags": [
+        "temporal",
+        "partition_key"
+      ],
+      "max_length": null,
+      "precision": null,
+      "scale": null,
+      "original_name": "event_date",
+      "pandas_dtype": "datetime64[ns]"
+    },
+    {
+      "name": "revenue",
+      "logical_type": "float",
+      "nullable": false,
+      "description": "Revenue generated from this event (USD)",
+      "source": "payment_processor",
+      "pii": false,
+      "tags": [
+        "financial",
+        "metric"
+      ],
+      "max_length": null,
+      "precision": null,
+      "scale": null,
+      "original_name": "revenue",
+      "pandas_dtype": "float64"
+    },
+    {
+      "name": "session_duration_seconds",
+      "logical_type": "bigint",
+      "nullable": false,
+      "description": "Length of user session in seconds",
+      "source": "client_sdk",
+      "pii": false,
+      "tags": [
+        "metric",
+        "engagement"
+      ],
+      "max_length": null,
+      "precision": null,
+      "scale": null,
+      "original_name": "session_duration_seconds",
+      "pandas_dtype": "int64"
+    },
+    {
+      "name": "created_at",
+      "logical_type": "timestamp",
+      "nullable": false,
+      "description": "Timestamp when event was recorded in database (UTC)",
+      "source": "server",
+      "pii": false,
+      "tags": [
+        "temporal",
+        "audit"
+      ],
+      "max_length": null,
+      "precision": null,
+      "scale": null,
+      "original_name": "created_at",
+      "pandas_dtype": "datetime64[ns]"
+    }
+  ],
+  "optimization": {
+    "partition_columns": [
+      "event_date"
+    ],
+    "cluster_columns": [
+      "user_id",
+      "event_type"
+    ],
+    "sort_columns": [],
+    "distribution_column": null,
+    "partition_expiration_days": null,
+    "require_partition_filter": false,
+    "transient": false
+  },
+  "description": "User interaction events captured from web and mobile clients",
+  "owner": "analytics",
+  "domain": "product_analytics",
+  "tags": [
+    "events",
+    "core",
+    "user_behavior"
+  ],
+  "created_from": "DataFrame"
+}

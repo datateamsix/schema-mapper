@@ -1,0 +1,15 @@
+Table,analytics.user_events
+Description,User interaction events captured from web and mobile clients
+Owner,analytics
+Domain,product_analytics
+Tags,"events, core, user_behavior"
+
+Column,Type,Nullable,Description,Source,PII,Tags
+event_id,STRING(255),No,Unique identifier for the event,client_sdk,No,"identifier, primary_key"
+user_id,BIGINT,No,User identifier (hashed for privacy),client_sdk,No,"identifier, foreign_key"
+email,STRING(255),No,User email address,user_profile,Yes,"contact, sensitive"
+event_type,STRING(255),No,"Type of user interaction (page_view, button_click, etc.)",client_sdk,No,"categorical, event_classification"
+event_date,TIMESTAMP,No,Date when the event occurred (UTC),server,No,"temporal, partition_key"
+revenue,FLOAT,No,Revenue generated from this event (USD),payment_processor,No,"financial, metric"
+session_duration_seconds,BIGINT,No,Length of user session in seconds,client_sdk,No,"metric, engagement"
+created_at,TIMESTAMP,No,Timestamp when event was recorded in database (UTC),server,No,"temporal, audit"
