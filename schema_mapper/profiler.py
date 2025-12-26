@@ -651,28 +651,42 @@ class Profiler:
     def plot_distributions(
         self,
         columns: Optional[List[str]] = None,
-        figsize: Tuple[int, int] = (12, 8)
+        figsize: Tuple[int, int] = (12, 8),
+        color: str = '#34495e',
+        kde_color: str = '#e74c3c'
     ):
         """
-        Generate histograms for numeric columns.
+        Generate histograms for numeric columns with customizable colors.
 
         Args:
             columns: Specific columns to plot (default: all numeric)
             figsize: Figure size tuple (width, height)
+            color: Histogram bar color (default: '#34495e' dark blue-grey)
+            kde_color: KDE line color (default: '#e74c3c' red)
 
         Returns:
             Matplotlib figure object
 
         Example:
+            >>> # Default dark blue-grey histograms
             >>> fig = profiler.plot_distributions()
             >>> fig.savefig('distributions.png')
+            >>>
+            >>> # Custom grey color
+            >>> fig = profiler.plot_distributions(
+            ...     columns=['age', 'income'],
+            ...     color='#7f8c8d',
+            ...     kde_color='#27ae60'
+            ... )
         """
         return DataVisualizer.plot_histogram(
             self.df,
             columns=columns,
             bins=30,
             figsize=figsize,
-            title=f'{self.name} - Distributions'
+            title=f'{self.name} - Distributions',
+            color=color,
+            kde_color=kde_color
         )
 
     def plot_correlations(
@@ -746,6 +760,54 @@ class Profiler:
             columns=columns,
             figsize=figsize,
             title=f'{self.name} - Outlier Detection'
+        )
+
+    def plot_scatter_matrix(
+        self,
+        columns: Optional[List[str]] = None,
+        figsize: Tuple[int, int] = (12, 12),
+        color: str = '#34495e',
+        alpha: float = 0.6,
+        diagonal: str = 'hist'
+    ):
+        """
+        Generate scatter plot matrix showing pairwise relationships between numeric columns.
+
+        Creates a grid of scatter plots for all combinations of numeric columns,
+        with histograms or KDE plots on the diagonal. Automatically adds trend lines
+        to scatter plots.
+
+        Args:
+            columns: Specific numeric columns to include (default: all numeric, max 6)
+            figsize: Figure size tuple (default: (12, 12))
+            color: Scatter plot and histogram color (default: '#34495e' dark blue-grey)
+            alpha: Point transparency for scatter plots (default: 0.6)
+            diagonal: Diagonal plot type - 'hist' or 'kde' (default: 'hist')
+
+        Returns:
+            Matplotlib figure object
+
+        Example:
+            >>> # Plot all numeric columns with default colors
+            >>> fig = profiler.plot_scatter_matrix()
+            >>> fig.savefig('scatter_matrix.png', dpi=300, bbox_inches='tight')
+            >>>
+            >>> # Plot specific columns with custom grey and KDE diagonal
+            >>> fig = profiler.plot_scatter_matrix(
+            ...     columns=['age', 'income', 'credit_score'],
+            ...     color='#7f8c8d',
+            ...     diagonal='kde'
+            ... )
+            >>> fig.savefig('custom_scatter_matrix.png')
+        """
+        return DataVisualizer.plot_scatter_matrix(
+            self.df,
+            columns=columns,
+            figsize=figsize,
+            title=f'{self.name} - Scatter Matrix',
+            color=color,
+            alpha=alpha,
+            diagonal=diagonal
         )
 
     # ========================================

@@ -67,10 +67,12 @@ class DataVisualizer:
         columns: Optional[List[str]] = None,
         bins: int = 30,
         figsize: Tuple[int, int] = (12, 8),
-        title: Optional[str] = None
+        title: Optional[str] = None,
+        color: str = '#34495e',  # Dark blue-grey (default)
+        kde_color: str = '#e74c3c'  # Red for KDE
     ):
         """
-        Generate histograms for numeric columns.
+        Generate histograms for numeric columns with customizable colors.
 
         Args:
             df: DataFrame to visualize
@@ -78,13 +80,23 @@ class DataVisualizer:
             bins: Number of histogram bins (default: 30)
             figsize: Figure size tuple (width, height) (default: (12, 8))
             title: Overall figure title (default: None)
+            color: Histogram bar color (default: '#34495e' dark blue-grey)
+            kde_color: KDE line color (default: '#e74c3c' red)
 
         Returns:
             Matplotlib Figure object
 
         Example:
-            >>> fig = DataVisualizer.plot_histogram(df, columns=['age', 'income'])
+            >>> # Plot all numeric columns with default dark blue-grey
+            >>> fig = DataVisualizer.plot_histogram(df)
             >>> fig.savefig('histograms.png', dpi=300, bbox_inches='tight')
+            >>>
+            >>> # Plot specific columns with custom color
+            >>> fig = DataVisualizer.plot_histogram(
+            ...     df, columns=['age', 'income'],
+            ...     color='#5d6d7e',  # Custom grey
+            ...     kde_color='#27ae60'  # Custom green for KDE
+            ... )
         """
         plt, sns = _ensure_viz_dependencies()
 
@@ -121,12 +133,12 @@ class DataVisualizer:
                 continue
 
             # Create histogram with KDE overlay
-            axes[idx].hist(series, bins=bins, alpha=0.7, color='steelblue',
+            axes[idx].hist(series, bins=bins, alpha=0.7, color=color,
                           edgecolor='black', density=True, label='Histogram')
 
             # Add KDE overlay
             try:
-                series.plot.kde(ax=axes[idx], color='red', linewidth=2, label='KDE')
+                series.plot.kde(ax=axes[idx], color=kde_color, linewidth=2, label='KDE')
                 axes[idx].legend()
             except Exception as e:
                 logger.debug(f"KDE plot failed for column '{col}': {e}")
@@ -254,6 +266,134 @@ class DataVisualizer:
             except Exception as e:
                 logger.debug(f"Could not add regression line for {x} vs {y}: {e}")
                 pass
+
+        plt.tight_layout()
+        return fig
+
+    @staticmethod
+    def plot_scatter_matrix(
+        df: pd.DataFrame,
+        columns: Optional[List[str]] = None,
+        figsize: Tuple[int, int] = (12, 12),
+        title: Optional[str] = None,
+        color: str = '#34495e',  # Dark blue-grey (default)
+        alpha: float = 0.6,
+        diagonal: str = 'hist'  # 'hist' or 'kde'
+    ):
+        """
+        Generate scatter plot matrix for multiple numeric columns.
+
+        Creates pairwise scatter plots showing relationships between all numeric
+        columns, with histograms or KDE plots on the diagonal.
+
+        Args:
+            df: DataFrame to visualize
+            columns: Specific numeric columns to include (default: all numeric)
+            figsize: Figure size tuple (default: (12, 12))
+            title: Overall figure title (default: None)
+            color: Scatter plot color (default: '#34495e' dark blue-grey)
+            alpha: Point transparency (default: 0.6)
+            diagonal: Diagonal plot type - 'hist' for histogram or 'kde' for density (default: 'hist')
+
+        Returns:
+            Matplotlib Figure object
+
+        Example:
+            >>> # Plot all numeric columns
+            >>> fig = DataVisualizer.plot_scatter_matrix(df)
+            >>> fig.savefig('scatter_matrix.png', dpi=300, bbox_inches='tight')
+            >>>
+            >>> # Plot specific columns with custom color
+            >>> fig = DataVisualizer.plot_scatter_matrix(
+            ...     df,
+            ...     columns=['age', 'income', 'credit_score'],
+            ...     color='#5d6d7e',  # Custom grey
+            ...     alpha=0.5,
+            ...     diagonal='kde'
+            ... )
+        """
+        plt, sns = _ensure_viz_dependencies()
+
+        if columns is None:
+            columns = df.select_dtypes(include=[np.number]).columns.tolist()
+
+        if len(columns) < 2:
+            logger.warning("Need at least 2 numeric columns for scatter matrix")
+            return None
+
+        # Limit to 6 columns for readability
+        if len(columns) > 6:
+            logger.warning(f"Too many columns ({len(columns)}), using first 6")
+            columns = columns[:6]
+
+        n_cols = len(columns)
+        fig, axes = plt.subplots(n_cols, n_cols, figsize=figsize)
+
+        # Plot scatter matrix
+        for i in range(n_cols):
+            for j in range(n_cols):
+                ax = axes[i, j] if n_cols > 1 else axes
+
+                if i == j:
+                    # Diagonal: histogram or KDE
+                    series = df[columns[i]].dropna()
+
+                    if diagonal == 'hist':
+                        ax.hist(series, bins=20, alpha=0.7, color=color, edgecolor='black')
+                        ax.set_ylabel('Frequency', fontsize=8)
+                    else:  # kde
+                        try:
+                            series.plot.kde(ax=ax, color=color, linewidth=2)
+                            ax.set_ylabel('Density', fontsize=8)
+                        except Exception as e:
+                            logger.debug(f"KDE failed for {columns[i]}, falling back to hist: {e}")
+                            ax.hist(series, bins=20, alpha=0.7, color=color, edgecolor='black')
+                            ax.set_ylabel('Frequency', fontsize=8)
+
+                    ax.set_title(columns[i], fontsize=9, fontweight='bold')
+
+                else:
+                    # Off-diagonal: scatter plots
+                    x_data = df[columns[j]].dropna()
+                    y_data = df[columns[i]].dropna()
+
+                    # Handle missing values - only plot where both exist
+                    valid_mask = df[columns[j]].notna() & df[columns[i]].notna()
+                    x_plot = df.loc[valid_mask, columns[j]]
+                    y_plot = df.loc[valid_mask, columns[i]]
+
+                    ax.scatter(x_plot, y_plot, alpha=alpha, color=color,
+                              s=20, edgecolors='black', linewidth=0.5)
+
+                    # Add trend line
+                    if len(x_plot) > 1:
+                        try:
+                            z = np.polyfit(x_plot, y_plot, 1)
+                            p = np.poly1d(z)
+                            ax.plot(x_plot, p(x_plot), "r--", alpha=0.8, linewidth=1)
+                        except Exception as e:
+                            logger.debug(f"Trend line failed for {columns[j]} vs {columns[i]}: {e}")
+
+                # Set labels
+                if i == n_cols - 1:
+                    ax.set_xlabel(columns[j], fontsize=8)
+                else:
+                    ax.set_xlabel('')
+                    ax.set_xticklabels([])
+
+                if j == 0 and i != j:
+                    ax.set_ylabel(columns[i], fontsize=8)
+                elif i == j:
+                    pass  # Already set in diagonal section
+                else:
+                    ax.set_ylabel('')
+                    ax.set_yticklabels([])
+
+                ax.grid(True, alpha=0.3)
+                ax.tick_params(labelsize=7)
+
+        if title:
+            fig.suptitle(title, fontsize=14, fontweight='bold', y=0.995)
 
         plt.tight_layout()
         return fig
