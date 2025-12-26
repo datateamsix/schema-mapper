@@ -7,6 +7,7 @@ transaction support with snapshot isolation, and DDL execution for SQL Server.
 
 from typing import Optional, Dict, Any, List
 import logging
+import pandas as pd
 
 try:
     import pyodbc
@@ -659,6 +660,209 @@ class SQLServerConnection(BaseConnection):
             self.logger.error(f"Error listing tables: {e}")
             raise
 
+    def get_tables(
+        self,
+        schema_name: Optional[str] = None,
+        database_name: Optional[str] = None
+    ) -> pd.DataFrame:
+        """
+        Get detailed table information as a pandas DataFrame.
+
+        Args:
+            schema_name: Schema name (uses configured schema if not provided)
+            database_name: Database name (uses configured database if not provided)
+
+        Returns:
+            pandas DataFrame with columns: table_name, table_type, rows, size_mb
+
+        Examples:
+            >>> tables = conn.get_tables(schema_name='dbo')
+            >>> print(tables)
+              table_name table_type    rows  size_mb
+            0      users      TABLE  150000    245.5
+            1     events      TABLE 5000000   8920.3
+            2  user_view       VIEW       0      0.0
+        """
+        try:
+            self.require_connection()
+
+            schema = schema_name or self.schema
+            database = database_name or self.database
+
+            self.logger.info(f"Getting table details for {database}.{schema}")
+
+            # Query to get table details
+            query = f"""
+                SELECT
+                    t.name as table_name,
+                    t.type_desc as table_type,
+                    SUM(p.rows) as rows,
+                    ROUND(SUM(a.total_pages) * 8.0 / 1024, 2) as size_mb
+                FROM [{database}].sys.tables t
+                INNER JOIN [{database}].sys.schemas s ON t.schema_id = s.schema_id
+                INNER JOIN [{database}].sys.partitions p ON t.object_id = p.object_id
+                INNER JOIN [{database}].sys.allocation_units a ON p.partition_id = a.container_id
+                WHERE s.name = '{schema}'
+                  AND p.index_id IN (0, 1)
+                GROUP BY t.name, t.type_desc
+                UNION ALL
+                SELECT
+                    v.name as table_name,
+                    'VIEW' as table_type,
+                    0 as rows,
+                    0.0 as size_mb
+                FROM [{database}].sys.views v
+                INNER JOIN [{database}].sys.schemas s ON v.schema_id = s.schema_id
+                WHERE s.name = '{schema}'
+                ORDER BY table_name
+            """
+
+            self._cursor.execute(query)
+            columns = [desc[0] for desc in self._cursor.description]
+            data = self._cursor.fetchall()
+            df = pd.DataFrame(data, columns=columns)
+
+            self.logger.info(f"Retrieved details for {len(df)} tables")
+
+            return df
+
+        except Exception as e:
+            self.logger.error(f"Error getting table details: {e}")
+            raise
+
+    def get_schemas(self, database_name: Optional[str] = None) -> pd.DataFrame:
+        """
+        List all schemas in SQL Server database and return as a pandas DataFrame.
+
+        Args:
+            database_name: Database name (uses configured database if not provided)
+
+        Returns:
+            pandas DataFrame with columns: schema_name, schema_id
+
+        Examples:
+            >>> schemas = conn.get_schemas()
+            >>> print(schemas)
+              schema_name  schema_id
+            0         dbo          1
+            1   analytics          5
+        """
+        try:
+            self.require_connection()
+            database = database_name or self.database
+
+            self.logger.info(f"Listing schemas in database: {database}")
+
+            # Query to list schemas
+            query = f"""
+                SELECT
+                    name as schema_name,
+                    schema_id
+                FROM [{database}].sys.schemas
+                WHERE name NOT IN ('sys', 'INFORMATION_SCHEMA', 'guest')
+                ORDER BY name
+            """
+
+            self._cursor.execute(query)
+            columns = [desc[0] for desc in self._cursor.description]
+            data = self._cursor.fetchall()
+            df = pd.DataFrame(data, columns=columns)
+
+            self.logger.info(f"Found {len(df)} schemas in database {database}")
+
+            return df
+
+        except Exception as e:
+            self.logger.error(f"Error listing schemas: {e}")
+            raise
+
+    def get_database_tree(
+        self,
+        database_name: Optional[str] = None,
+        include_table_counts: bool = True,
+        format: str = 'dict'
+    ) -> Any:
+        """
+        Get hierarchical structure of database → schemas → tables.
+
+        Args:
+            database_name: Database name (uses configured database if not provided)
+            include_table_counts: Include count of tables in each schema (default: True)
+            format: Output format - 'dict' for nested dictionary, 'dataframe' for flat table
+
+        Returns:
+            Dictionary or DataFrame with database structure
+
+        Examples:
+            >>> tree = conn.get_database_tree(format='dict')
+            >>> tree_df = conn.get_database_tree(format='dataframe')
+        """
+        try:
+            self.require_connection()
+            database = database_name or self.database
+
+            self.logger.info(f"Building database tree for: {database}")
+
+            # Get schemas
+            schemas_df = self.get_schemas(database_name=database)
+
+            tree_data = []
+            for _, schema_row in schemas_df.iterrows():
+                schema_name = schema_row['schema_name']
+
+                schema_info = {
+                    'schema_name': schema_name,
+                }
+
+                # Get tables for this schema
+                try:
+                    tables = self.list_tables(schema_name=schema_name, database_name=database)
+
+                    if include_table_counts:
+                        schema_info['table_count'] = len(tables)
+
+                    schema_info['tables'] = tables
+
+                except Exception as e:
+                    self.logger.warning(f"Could not list tables for {schema_name}: {e}")
+                    schema_info['table_count'] = 0
+                    schema_info['tables'] = []
+
+                tree_data.append(schema_info)
+
+            if format == 'dict':
+                result = {
+                    'database': database,
+                    'schema_count': len(tree_data),
+                    'schemas': tree_data
+                }
+                self.logger.info(f"Database tree built: {len(tree_data)} schemas")
+                return result
+
+            elif format == 'dataframe':
+                # Flatten to DataFrame
+                df_data = []
+                for schema_info in tree_data:
+                    row = {
+                        'database': database,
+                        'schema_name': schema_info['schema_name'],
+                    }
+                    if include_table_counts:
+                        row['table_count'] = schema_info['table_count']
+                    row['tables'] = ', '.join(schema_info['tables']) if schema_info['tables'] else ''
+                    df_data.append(row)
+
+                df = pd.DataFrame(df_data)
+                self.logger.info(f"Database tree built: {len(df)} schemas")
+                return df
+
+            else:
+                raise ValueError(f"Invalid format: {format}. Must be 'dict' or 'dataframe'")
+
+        except Exception as e:
+            self.logger.error(f"Error building database tree: {e}")
+            raise
+
     def execute_ddl(self, ddl: str) -> bool:
         """
         Execute DDL statement in SQL Server.
@@ -720,31 +924,56 @@ class SQLServerConnection(BaseConnection):
                 original_error=e
             )
 
-    def execute_query(self, query: str) -> Any:
+    def execute_query(self, query: str) -> pd.DataFrame:
         """
-        Execute query in SQL Server.
+        Execute query in SQL Server and return results as a pandas DataFrame.
 
         Args:
             query: SQL query
 
         Returns:
-            Cursor with results
+            pandas DataFrame with query results
+
+        Raises:
+            ExecutionError: If query execution fails
+            ConnectionError: If not connected
 
         Examples:
             >>> result = conn.execute_query("SELECT COUNT(*) FROM dbo.users")
-            >>> for row in result:
-            ...     print(row)
+            >>> print(result)
+            >>> # result is a pandas DataFrame
+            >>> print(type(result))
+            <class 'pandas.core.frame.DataFrame'>
         """
         try:
             self.require_connection()
             self.logger.debug(f"Executing query: {query[:100]}...")
 
             self._cursor.execute(query)
-            return self._cursor
+            # Fetch all results and convert to DataFrame
+            columns = [desc[0] for desc in self._cursor.description]
+            data = self._cursor.fetchall()
+            df = pd.DataFrame(data, columns=columns)
 
+            self.logger.debug(f"Query returned {len(df)} rows")
+            return df
+
+        except pyodbc.Error as e:
+            self.logger.error(f"Query execution failed: {e}")
+            raise ExecutionError(
+                f"Query execution failed: {e}",
+                query=query,
+                platform=self.platform_name(),
+                original_error=e
+            )
         except Exception as e:
             self.logger.error(f"Query execution failed: {e}")
-            raise
+            raise ExecutionError(
+                f"Unexpected error during query execution: {e}",
+                query=query,
+                platform=self.platform_name(),
+                original_error=e
+            )
 
     def begin_transaction(self, isolation_level: Optional[str] = None) -> None:
         """

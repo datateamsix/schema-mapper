@@ -7,6 +7,7 @@ transaction support with isolation levels, and DDL execution for PostgreSQL.
 
 from typing import Optional, Dict, Any, List
 import logging
+import pandas as pd
 
 try:
     import psycopg2
@@ -576,6 +577,198 @@ class PostgreSQLConnection(BaseConnection):
             self.logger.error(f"Error listing tables: {e}")
             raise
 
+    def get_tables(
+        self,
+        schema_name: Optional[str] = None,
+        database_name: Optional[str] = None
+    ) -> pd.DataFrame:
+        """
+        Get detailed table information as a pandas DataFrame.
+
+        Args:
+            schema_name: Schema name (uses configured schema if not provided)
+            database_name: Database name (ignored for PostgreSQL)
+
+        Returns:
+            pandas DataFrame with columns: table_name, table_type, size_mb
+
+        Examples:
+            >>> tables = conn.get_tables(schema_name='public')
+            >>> print(tables)
+              table_name table_type  size_mb
+            0      users      TABLE    245.5
+            1     events      TABLE   8920.3
+            2  user_view       VIEW      0.0
+        """
+        try:
+            self.require_connection()
+
+            schema = schema_name or self.schema
+
+            self.logger.info(f"Getting table details for schema: {schema}")
+
+            # Query to get table details
+            query = f"""
+                SELECT
+                    t.tablename as table_name,
+                    'TABLE' as table_type,
+                    ROUND(pg_total_relation_size(quote_ident(t.schemaname) || '.' || quote_ident(t.tablename))::numeric / (1024 * 1024), 2) as size_mb
+                FROM pg_catalog.pg_tables t
+                WHERE t.schemaname = '{schema}'
+                UNION ALL
+                SELECT
+                    v.viewname as table_name,
+                    'VIEW' as table_type,
+                    0.0 as size_mb
+                FROM pg_catalog.pg_views v
+                WHERE v.schemaname = '{schema}'
+                ORDER BY table_name
+            """
+
+            self._cursor.execute(query)
+            columns = [desc[0] for desc in self._cursor.description]
+            data = self._cursor.fetchall()
+            df = pd.DataFrame(data, columns=columns)
+
+            self.logger.info(f"Retrieved details for {len(df)} tables")
+
+            return df
+
+        except Exception as e:
+            self.logger.error(f"Error getting table details: {e}")
+            raise
+
+    def get_schemas(self, database_name: Optional[str] = None) -> pd.DataFrame:
+        """
+        List all schemas in PostgreSQL database and return as a pandas DataFrame.
+
+        Args:
+            database_name: Database name (ignored for PostgreSQL, uses current database)
+
+        Returns:
+            pandas DataFrame with columns: schema_name, schema_owner
+
+        Examples:
+            >>> schemas = conn.get_schemas()
+            >>> print(schemas)
+              schema_name schema_owner
+            0      public     postgres
+            1   analytics      analyst
+        """
+        try:
+            self.require_connection()
+
+            self.logger.info("Listing schemas in PostgreSQL database")
+
+            # Query to list schemas
+            query = """
+                SELECT
+                    schema_name,
+                    schema_owner
+                FROM information_schema.schemata
+                WHERE schema_name NOT IN ('information_schema', 'pg_catalog', 'pg_toast')
+                ORDER BY schema_name
+            """
+
+            self._cursor.execute(query)
+            columns = [desc[0] for desc in self._cursor.description]
+            data = self._cursor.fetchall()
+            df = pd.DataFrame(data, columns=columns)
+
+            self.logger.info(f"Found {len(df)} schemas")
+
+            return df
+
+        except Exception as e:
+            self.logger.error(f"Error listing schemas: {e}")
+            raise
+
+    def get_database_tree(
+        self,
+        database_name: Optional[str] = None,
+        include_table_counts: bool = True,
+        format: str = 'dict'
+    ) -> Any:
+        """
+        Get hierarchical structure of database → schemas → tables.
+
+        Args:
+            database_name: Database name (ignored for PostgreSQL, uses current database)
+            include_table_counts: Include count of tables in each schema (default: True)
+            format: Output format - 'dict' for nested dictionary, 'dataframe' for flat table
+
+        Returns:
+            Dictionary or DataFrame with database structure
+
+        Examples:
+            >>> tree = conn.get_database_tree(format='dict')
+            >>> tree_df = conn.get_database_tree(format='dataframe')
+        """
+        try:
+            self.require_connection()
+
+            self.logger.info("Building database tree for PostgreSQL")
+
+            # Get schemas
+            schemas_df = self.get_schemas()
+
+            tree_data = []
+            for _, schema_row in schemas_df.iterrows():
+                schema_name = schema_row['schema_name']
+
+                schema_info = {
+                    'schema_name': schema_name,
+                }
+
+                # Get tables for this schema
+                try:
+                    tables = self.list_tables(schema_name=schema_name)
+
+                    if include_table_counts:
+                        schema_info['table_count'] = len(tables)
+
+                    schema_info['tables'] = tables
+
+                except Exception as e:
+                    self.logger.warning(f"Could not list tables for {schema_name}: {e}")
+                    schema_info['table_count'] = 0
+                    schema_info['tables'] = []
+
+                tree_data.append(schema_info)
+
+            if format == 'dict':
+                result = {
+                    'database': self.database or 'current',
+                    'schema_count': len(tree_data),
+                    'schemas': tree_data
+                }
+                self.logger.info(f"Database tree built: {len(tree_data)} schemas")
+                return result
+
+            elif format == 'dataframe':
+                # Flatten to DataFrame
+                df_data = []
+                for schema_info in tree_data:
+                    row = {
+                        'database': self.database or 'current',
+                        'schema_name': schema_info['schema_name'],
+                    }
+                    if include_table_counts:
+                        row['table_count'] = schema_info['table_count']
+                    row['tables'] = ', '.join(schema_info['tables']) if schema_info['tables'] else ''
+                    df_data.append(row)
+
+                df = pd.DataFrame(df_data)
+                self.logger.info(f"Database tree built: {len(df)} schemas")
+                return df
+
+            else:
+                raise ValueError(f"Invalid format: {format}. Must be 'dict' or 'dataframe'")
+
+        except Exception as e:
+            self.logger.error(f"Error building database tree: {e}")
+            raise
+
     def execute_ddl(self, ddl: str) -> bool:
         """
         Execute DDL statement in PostgreSQL.
@@ -622,31 +815,56 @@ class PostgreSQLConnection(BaseConnection):
                 original_error=e
             )
 
-    def execute_query(self, query: str) -> Any:
+    def execute_query(self, query: str) -> pd.DataFrame:
         """
-        Execute query in PostgreSQL.
+        Execute query in PostgreSQL and return results as a pandas DataFrame.
 
         Args:
             query: SQL query
 
         Returns:
-            Cursor with results
+            pandas DataFrame with query results
+
+        Raises:
+            ExecutionError: If query execution fails
+            ConnectionError: If not connected
 
         Examples:
             >>> result = conn.execute_query("SELECT COUNT(*) FROM public.users")
-            >>> for row in result:
-            ...     print(row)
+            >>> print(result)
+            >>> # result is a pandas DataFrame
+            >>> print(type(result))
+            <class 'pandas.core.frame.DataFrame'>
         """
         try:
             self.require_connection()
             self.logger.debug(f"Executing query: {query[:100]}...")
 
             self._cursor.execute(query)
-            return self._cursor
+            # Fetch all results and convert to DataFrame
+            columns = [desc[0] for desc in self._cursor.description]
+            data = self._cursor.fetchall()
+            df = pd.DataFrame(data, columns=columns)
 
+            self.logger.debug(f"Query returned {len(df)} rows")
+            return df
+
+        except (ProgrammingError, OperationalError, DatabaseError) as e:
+            self.logger.error(f"Query execution failed: {e}")
+            raise ExecutionError(
+                f"Query execution failed: {e}",
+                query=query,
+                platform=self.platform_name(),
+                original_error=e
+            )
         except Exception as e:
             self.logger.error(f"Query execution failed: {e}")
-            raise
+            raise ExecutionError(
+                f"Unexpected error during query execution: {e}",
+                query=query,
+                platform=self.platform_name(),
+                original_error=e
+            )
 
     def begin_transaction(self, isolation_level: Optional[str] = None) -> None:
         """
