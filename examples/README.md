@@ -59,6 +59,26 @@ Production-ready examples demonstrating schema-mapper's unified connection syste
    - Metadata validation and governance
    - **Time: 20 minutes** | **NEW FRAMEWORK**
 
+### Data Profiling & ML Features
+
+9. **[09_data_profiling_analysis.py](09_data_profiling_analysis.py)** - Data Profiling and Statistical Analysis
+   - Comprehensive statistical profiling
+   - Data quality assessment (quality scores, completeness, validity)
+   - Distribution and correlation analysis
+   - Missing value and outlier detection
+   - Pattern recognition (emails, dates, etc.)
+   - Visualization and report generation
+   - **Time: 15 minutes** | **v1.3.0 FEATURE**
+
+10. **[10_ml_feature_engineering.py](10_ml_feature_engineering.py)** - Machine Learning Feature Engineering
+    - Target correlation analysis for feature importance
+    - Feature importance visualization
+    - Automatic categorical encoding
+    - Complete ML preprocessing pipeline
+    - Classification and regression workflows
+    - Integration with ML frameworks
+    - **Time: 20 minutes** | **v1.3.0 ML FEATURE**
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -66,6 +86,9 @@ Production-ready examples demonstrating schema-mapper's unified connection syste
 ```bash
 # Install schema-mapper with platform dependencies
 pip install schema-mapper[bigquery,snowflake,postgresql]
+
+# For profiling and ML examples (9-10)
+pip install schema-mapper[all]  # Includes matplotlib, seaborn, scikit-learn
 
 # For Prefect example
 pip install prefect
@@ -146,6 +169,15 @@ python 06_prefect_orchestration.py
 
 # Connection pooling
 python 07_connection_pooling.py
+
+# Metadata & data dictionary
+python 08_metadata_data_dictionary.py
+
+# Data profiling and analysis
+python 09_data_profiling_analysis.py
+
+# ML feature engineering
+python 10_ml_feature_engineering.py
 ```
 
 ## 📊 Sample Data
@@ -167,10 +199,17 @@ All examples use `../sample_data/problematic_clothing_retailer_data.csv`:
 - Incremental loads
 - Change data capture
 
-**Advanced**: Examples 6-7
+**Advanced**: Examples 6-8
 - Orchestration integration
 - Performance optimization
+- Metadata management
 - Production deployment
+
+**Data Science**: Examples 9-10
+- Data profiling and quality assessment
+- Feature engineering for ML
+- Statistical analysis
+- ML pipeline preparation
 
 ## 🔧 Troubleshooting
 
