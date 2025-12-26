@@ -255,7 +255,7 @@
                 <div class="role-hero">
                     <div class="role-icon-large"><i class="fas fa-flask"></i></div>
                     <h3 class="role-title">Data Scientists</h3>
-                    <p class="role-desc">ML preprocessing and feature engineering</p>
+                    <p class="role-desc">ML preprocessing and feature engineering workflows (v1.3.0)</p>
                 </div>
                 <div class="before-after-grid">
                     <div class="before-card">
@@ -264,10 +264,10 @@
                             <span>Without schema-mapper</span>
                         </div>
                         <ul class="pain-points">
-                            <li>Manual EDA for every dataset</li>
-                            <li>Write custom cleaning code repeatedly</li>
-                            <li>No visibility into data quality</li>
-                            <li>Missing value handling ad-hoc</li>
+                            <li>Manual feature importance analysis</li>
+                            <li>Write custom encoding logic for every dataset</li>
+                            <li>Time-consuming EDA and profiling</li>
+                            <li>Repetitive categorical encoding code</li>
                         </ul>
                     </div>
                     <div class="after-card">
@@ -276,10 +276,10 @@
                             <span>With schema-mapper</span>
                         </div>
                         <ul class="benefits">
-                            <li><strong>Instant EDA</strong> → comprehensive profiling with visualizations</li>
-                            <li><strong>Smart preprocessing</strong> → KNN imputation, encoding, scaling</li>
-                            <li><strong>Quality monitoring</strong> → track data drift over time</li>
-                            <li><strong>Feature stores</strong> → clean data ready for ML pipelines</li>
+                            <li><strong>Target correlation analysis</strong> → identify important features automatically</li>
+                            <li><strong>Auto-encode categoricals</strong> → smart detection with configurable thresholds</li>
+                            <li><strong>Feature importance viz</strong> → color-coded charts with one line of code</li>
+                            <li><strong>ML-ready pipelines</strong> → from raw data to model input automatically</li>
                         </ul>
                     </div>
                 </div>
@@ -324,55 +324,55 @@
     <!-- What's New Section -->
     <section class="whats-new">
         <div class="container">
-            <h2 class="section-title"><strong>What's New in v1.2.0</strong></h2>
-            <p class="section-subtitle">Production-grade connection management and metadata framework—schema-mapper is now a complete data platform toolkit</p>
+            <h2 class="section-title"><strong>What's New in v1.3.0</strong></h2>
+            <p class="section-subtitle">DataFrame-first API, Enhanced Database Discovery, and ML Feature Engineering—Query once, analyze anywhere, DataFrames everywhere</p>
 
             <div class="use-case-grid-four">
                 <div class="use-case-card-large">
-                    <div class="use-case-icon"><i class="fas fa-plug"></i></div>
-                    <h3>Unified Connection Layer</h3>
-                    <p>Single API for all 5 database platforms. No more learning platform-specific SDKs.</p>
+                    <div class="use-case-icon"><i class="fas fa-table"></i></div>
+                    <h3>DataFrame Query Results</h3>
+                    <p>All database queries return pandas DataFrames. Consistent API across all 5 platforms.</p>
                     <ul class="benefit-list">
-                        <li><i class="fas fa-check-circle"></i> One API for BigQuery, Snowflake, Redshift, SQL Server, PostgreSQL</li>
-                        <li><i class="fas fa-check-circle"></i> Connection pooling with thread-safe management</li>
-                        <li><i class="fas fa-check-circle"></i> Auto-retry with exponential backoff</li>
-                        <li><i class="fas fa-check-circle"></i> YAML + .env configuration—no hardcoded credentials</li>
+                        <li><i class="fas fa-check-circle"></i> Automatic conversion from cursors/iterators to DataFrames</li>
+                        <li><i class="fas fa-check-circle"></i> Immediate DataFrame access—no more iteration</li>
+                        <li><i class="fas fa-check-circle"></i> Enhanced error handling with ExecutionError</li>
+                        <li><i class="fas fa-check-circle"></i> Same code works for all platforms</li>
                     </ul>
                 </div>
 
                 <div class="use-case-card-large">
-                    <div class="use-case-icon"><i class="fas fa-book-open"></i></div>
-                    <h3>Metadata & Data Dictionary</h3>
-                    <p>Schema = Structure + Meaning. Built-in metadata management and documentation generation.</p>
+                    <div class="use-case-icon"><i class="fas fa-search"></i></div>
+                    <h3>Enhanced Database Discovery</h3>
+                    <p>Programmatically explore your entire data warehouse with introspection methods.</p>
                     <ul class="benefit-list">
-                        <li><i class="fas fa-check-circle"></i> YAML-driven schemas with version control</li>
-                        <li><i class="fas fa-check-circle"></i> Auto-generate data dictionaries (Markdown, CSV, JSON)</li>
-                        <li><i class="fas fa-check-circle"></i> PII governance flags for compliance</li>
-                        <li><i class="fas fa-check-circle"></i> Metadata validation—enforce required fields</li>
+                        <li><i class="fas fa-check-circle"></i> get_tables() with detailed metadata (size, rows, created)</li>
+                        <li><i class="fas fa-check-circle"></i> get_schemas() / get_datasets() for structure exploration</li>
+                        <li><i class="fas fa-check-circle"></i> get_database_tree() with dict/DataFrame output formats</li>
+                        <li><i class="fas fa-check-circle"></i> Export complete warehouse inventories</li>
                     </ul>
                 </div>
 
                 <div class="use-case-card-large">
-                    <div class="use-case-icon"><i class="fas fa-sync-alt"></i></div>
-                    <h3>Incremental Loads</h3>
-                    <p>Production-ready UPSERT, SCD Type 2, and CDC patterns for all platforms.</p>
+                    <div class="use-case-icon"><i class="fas fa-robot"></i></div>
+                    <h3>ML Feature Engineering</h3>
+                    <p>Intelligent feature analysis and automated preprocessing for machine learning workflows.</p>
                     <ul class="benefit-list">
-                        <li><i class="fas fa-check-circle"></i> 9 load patterns: UPSERT, SCD2, CDC, Snapshot, Append</li>
-                        <li><i class="fas fa-check-circle"></i> Platform-optimized MERGE statements</li>
-                        <li><i class="fas fa-check-circle"></i> Automatic primary key detection</li>
-                        <li><i class="fas fa-check-circle"></i> Change tracking with full history</li>
+                        <li><i class="fas fa-check-circle"></i> Target correlation analysis for feature importance</li>
+                        <li><i class="fas fa-check-circle"></i> Auto-detect and encode categorical columns</li>
+                        <li><i class="fas fa-check-circle"></i> Feature importance visualization with color-coded charts</li>
+                        <li><i class="fas fa-check-circle"></i> Automatic binary/multi-class target encoding</li>
                     </ul>
                 </div>
 
                 <div class="use-case-card-large">
-                    <div class="use-case-icon"><i class="fas fa-layer-group"></i></div>
-                    <h3>Connection Pooling</h3>
-                    <p>High-concurrency workloads with efficient resource management and monitoring.</p>
+                    <div class="use-case-icon"><i class="fas fa-paint-brush"></i></div>
+                    <h3>Enhanced Visualizations</h3>
+                    <p>Customizable plotting with sensible defaults for data profiling and analysis.</p>
                     <ul class="benefit-list">
-                        <li><i class="fas fa-check-circle"></i> Thread-safe connection pools</li>
-                        <li><i class="fas fa-check-circle"></i> Health checks and automatic validation</li>
-                        <li><i class="fas fa-check-circle"></i> Real-time pool statistics</li>
-                        <li><i class="fas fa-check-circle"></i> Configurable pool sizing and timeouts</li>
+                        <li><i class="fas fa-check-circle"></i> Custom color parameters (default: dark blue-grey)</li>
+                        <li><i class="fas fa-check-circle"></i> Scatter plot matrix with trend lines</li>
+                        <li><i class="fas fa-check-circle"></i> Automatic axis and title labeling</li>
+                        <li><i class="fas fa-check-circle"></i> Matplotlib abstraction for ease of use</li>
                     </ul>
                 </div>
             </div>
@@ -472,6 +472,16 @@
                     <div class="feature-icon"><i class="fas fa-broom"></i></div>
                     <h3>Data Preprocessing</h3>
                     <p>Standardization, validation, cleaning, deduplication. Reproducible preprocessing pipelines.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-robot"></i></div>
+                    <h3>ML Feature Engineering <span class="badge-new">v1.3.0</span></h3>
+                    <p>Target correlation analysis and auto-encoding. Feature importance identification for ML workflows.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-search-plus"></i></div>
+                    <h3>Database Discovery <span class="badge-new">v1.3.0</span></h3>
+                    <p>Introspect warehouse structure programmatically. Export table inventories with metadata.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon"><i class="fas fa-network-wired"></i></div>
@@ -723,6 +733,88 @@ if not issues['errors']:
     print(f"SUCCESS: {len(schema)} columns prepared and ready to load!")
 else:
     print("ERROR: Fix these errors:", issues['errors'])</code></pre>
+            </div>
+
+            <h3 class="subsection-title"><i class="fas fa-robot"></i> ML Feature Engineering (NEW in v1.3.0!)</h3>
+            <div class="code-example">
+                <div class="code-header">
+                    <span class="code-lang"><i class="fab fa-python"></i> Python</span>
+                    <button class="copy-btn"><i class="far fa-copy"></i> Copy</button>
+                </div>
+                <pre><code class="language-python">from schema_mapper import Profiler, PreProcessor
+import pandas as pd
+
+# Load your data
+df = pd.read_csv('customer_churn.csv')
+
+# 1. ANALYZE: Find most important features for your target
+profiler = Profiler(df, name='churn_analysis')
+
+# Automatic target correlation analysis (handles categorical targets!)
+feature_importance = profiler.analyze_target_correlation(
+    target_column='churn',  # Works with both categorical and numeric targets
+    method='pearson',
+    top_n=15
+)
+
+print(feature_importance)
+#          feature  correlation  abs_correlation
+# 0  tenure_months       -0.352            0.352
+# 1 monthly_charges        0.298            0.298
+# 2   support_tickets      0.245            0.245
+
+# 2. VISUALIZE: Feature importance chart (one line!)
+fig = profiler.plot_target_correlation('churn', top_n=15)
+fig.savefig('feature_importance.png', dpi=300, bbox_inches='tight')
+
+# 3. PREPROCESS: Auto-detect and encode categorical columns
+preprocessor = PreProcessor(df)
+
+preprocessor.auto_encode_categorical(
+    exclude_columns=['churn', 'customer_id'],  # Don't encode target/ID
+    max_categories=10,                          # Only encode low-cardinality
+    drop_first=True                             # Avoid multicollinearity
+)
+
+# ML-ready dataset!
+print(f"Ready for ML: {preprocessor.df.shape}")
+# Original: (10000, 15) → After encoding: (10000, 45)</code></pre>
+            </div>
+
+            <h3 class="subsection-title"><i class="fas fa-search"></i> Database Discovery & Introspection (NEW in v1.3.0!)</h3>
+            <div class="code-example">
+                <div class="code-header">
+                    <span class="code-lang"><i class="fab fa-python"></i> Python</span>
+                    <button class="copy-btn"><i class="far fa-copy"></i> Copy</button>
+                </div>
+                <pre><code class="language-python">from schema_mapper.connections import ConnectionFactory, ConnectionConfig
+
+# Connect to any database
+config = ConnectionConfig('config/connections.yaml')
+with ConnectionFactory.get_connection('bigquery', config) as conn:
+
+    # 1. Get all tables with metadata (DataFrames everywhere!)
+    tables = conn.get_tables(schema_name='analytics')
+    print(tables)
+    #   table_name table_type  num_rows  size_mb                 created
+    # 0      users      TABLE    150000    245.5  2024-01-01 10:00:00
+    # 1     events      TABLE   5000000   8920.3  2024-01-05 11:00:00
+
+    # Find large tables
+    large_tables = tables[tables['size_mb'] > 1000]
+
+    # 2. Get all schemas/datasets
+    datasets = conn.get_datasets()
+    print(f"Found {len(datasets)} datasets")
+
+    # 3. Get complete warehouse structure
+    tree = conn.get_database_tree(format='dataframe')
+    tree.to_csv('warehouse_inventory.csv')
+
+    # Or as JSON for documentation
+    tree_dict = conn.get_database_tree(format='dict')
+
+# Same code works for all 5 platforms!</code></pre>
             </div>
 
             <h3 class="subsection-title"><i class="fas fa-sitemap"></i> Canonical Schema → Multi-Platform</h3>
