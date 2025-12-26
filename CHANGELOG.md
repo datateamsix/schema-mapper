@@ -5,7 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.3.0] - 2025-01-XX
+## [1.4.0] - 2025-12-25
+
+### Added
+- **Machine Learning Features**: New methods for ML preprocessing and feature analysis
+  - **Profiler.analyze_target_correlation()**: Analyze feature correlations against a target variable
+    - Automatic binary encoding for categorical targets (classification tasks)
+    - Label encoding for multi-class targets
+    - Returns sorted DataFrame by correlation strength
+    - Supports pearson, spearman, and kendall correlation methods
+  - **Profiler.plot_target_correlation()**: Visualize feature importance with horizontal bar chart
+    - Color-coded positive (green) and negative (red) correlations
+    - Automatic target encoding for categorical variables
+    - Configurable top-N features display
+  - **PreProcessor.auto_encode_categorical()**: Intelligent categorical encoding
+    - Auto-detects categorical columns based on data type and cardinality
+    - Configurable thresholds for max categories and minimum frequency
+    - Excludes specified columns (e.g., target, ID columns)
+    - One-hot encoding with optional multicollinearity handling
+
+- **Enhanced Visualizations**:
+  - Updated `plot_histogram()` with color parameters (default: dark blue-grey #34495e, KDE: red #e74c3c)
+  - New `plot_scatter_matrix()` method for pairwise relationship visualization with trend lines
+  - New `DataVisualizer.plot_target_correlation()` for feature importance charts
+  - Automatic axis and title labeling for all plots
+  - Abstracted matplotlib complexity with sensible defaults
+
+- **Example Files**:
+  - `examples/09_data_profiling_analysis.py`: Comprehensive data profiling workflow
+  - `examples/10_ml_feature_engineering.py`: ML-focused preprocessing and feature engineering
+  - Updated `examples/README.md` with new examples and learning paths
+
+### Enhanced
+- **Documentation**: Updated landing page (index.html) with v1.4.0 ML features and examples
+- **Release Notes**: Created comprehensive RELEASE_NOTES_v1.4.0.md
+
+### Use Cases Enabled
+- Automated feature importance analysis for ML workflows
+- Intelligent categorical encoding with auto-detection
+- One-line feature importance visualization
+- Complete ML preprocessing pipelines
+- Classification and regression target handling
+
+## [1.3.0] - 2025-12-25
 
 ### Added
 - **DataFrame Query Results**: All platform connectors now return pandas DataFrames from `execute_query()` instead of native database objects (RowIterator, cursors)
@@ -34,28 +76,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BigQuery Documentation**: Added prominent notes about `dataset.table` format requirement in class docstrings and query examples
 - **Error Handling**: All new introspection methods include comprehensive error handling with platform-specific ExecutionError exceptions
 - **Logging**: Enhanced logging for all introspection operations with row/table counts
-- **Visualization Methods**: Enhanced profiler visualization capabilities with customizable styling
-  - Updated `plot_histogram()` with color parameters (default: dark blue-grey #34495e, KDE: red #e74c3c)
-  - New `plot_scatter_matrix()` method for pairwise relationship visualization with trend lines
-  - Automatic axis and title labeling for all plots
-  - Abstracted matplotlib complexity with sensible defaults
-  - Added `Profiler.plot_distributions()` and `Profiler.plot_scatter_matrix()` wrapper methods
-
-- **Machine Learning Features**: New methods for ML preprocessing and feature analysis
-  - **Profiler.analyze_target_correlation()**: Analyze feature correlations against a target variable
-    - Automatic binary encoding for categorical targets (classification tasks)
-    - Label encoding for multi-class targets
-    - Returns sorted DataFrame by correlation strength
-    - Supports pearson, spearman, and kendall correlation methods
-  - **Profiler.plot_target_correlation()**: Visualize feature importance with horizontal bar chart
-    - Color-coded positive (green) and negative (red) correlations
-    - Automatic target encoding for categorical variables
-    - Configurable top-N features display
-  - **PreProcessor.auto_encode_categorical()**: Intelligent categorical encoding
-    - Auto-detects categorical columns based on data type and cardinality
-    - Configurable thresholds for max categories and minimum frequency
-    - Excludes specified columns (e.g., target, ID columns)
-    - One-hot encoding with optional multicollinearity handling
 
 ### Use Cases Enabled
 - Query databases and immediately get DataFrames for analysis
