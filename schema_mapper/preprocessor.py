@@ -1159,6 +1159,123 @@ class PreProcessor:
         self._update_shape_after()
         return self
 
+    def auto_encode_categorical(
+        self,
+        exclude_columns: Optional[List[str]] = None,
+        max_categories: int = 10,
+        min_frequency: float = 0.01,
+        drop_first: bool = False,
+        drop_original: bool = True
+    ) -> 'PreProcessor':
+        """
+        Automatically detect and one-hot encode categorical columns.
+
+        Detects categorical columns based on data type and cardinality, then applies
+        one-hot encoding. Useful for ML preprocessing pipelines to automate feature
+        engineering.
+
+        Detection Criteria:
+        - Object/string columns with <= max_categories unique values
+        - Numeric columns with <= max_categories unique values (low cardinality)
+        - Each category must appear in at least min_frequency of rows
+
+        Args:
+            exclude_columns: Columns to exclude from encoding (e.g., ID, target)
+            max_categories: Maximum unique values for a column to be encoded (default: 10)
+            min_frequency: Minimum frequency (0-1) for a category to be encoded (default: 0.01 = 1%)
+            drop_first: Drop first category to avoid multicollinearity (default: False)
+            drop_original: Whether to drop original columns after encoding (default: True)
+
+        Returns:
+            Self for method chaining
+
+        Example:
+            >>> # Auto-detect and encode all categorical columns
+            >>> preprocessor.auto_encode_categorical()
+            >>>
+            >>> # Exclude target column from encoding
+            >>> preprocessor.auto_encode_categorical(exclude_columns=['target', 'id'])
+            >>>
+            >>> # More restrictive: only encode columns with <= 5 categories
+            >>> preprocessor.auto_encode_categorical(max_categories=5, min_frequency=0.05)
+            >>>
+            >>> # Keep original columns alongside encoded versions
+            >>> preprocessor.auto_encode_categorical(drop_original=False)
+        """
+        self._log_transformation('auto_encode_categorical', {
+            'exclude_columns': exclude_columns,
+            'max_categories': max_categories,
+            'min_frequency': min_frequency,
+            'drop_first': drop_first,
+            'drop_original': drop_original
+        })
+
+        exclude_columns = exclude_columns or []
+        columns_to_encode = []
+
+        logger.info(f"Auto-detecting categorical columns (max_categories={max_categories}, "
+                   f"min_frequency={min_frequency})...")
+
+        for col in self.df.columns:
+            # Skip excluded columns
+            if col in exclude_columns:
+                logger.debug(f"Skipping '{col}' - excluded")
+                continue
+
+            # Get column info
+            unique_count = self.df[col].nunique()
+            total_count = len(self.df)
+
+            # Skip if too many unique values
+            if unique_count > max_categories:
+                logger.debug(f"Skipping '{col}' - {unique_count} unique values > {max_categories}")
+                continue
+
+            # Skip if only 1 unique value (no information)
+            if unique_count <= 1:
+                logger.debug(f"Skipping '{col}' - only {unique_count} unique value(s)")
+                continue
+
+            # Check data type
+            is_object = pd.api.types.is_object_dtype(self.df[col])
+            is_categorical = pd.api.types.is_categorical_dtype(self.df[col])
+            is_low_cardinality_numeric = (
+                pd.api.types.is_numeric_dtype(self.df[col]) and unique_count <= max_categories
+            )
+
+            if not (is_object or is_categorical or is_low_cardinality_numeric):
+                logger.debug(f"Skipping '{col}' - not categorical type")
+                continue
+
+            # Check frequency of categories
+            value_counts = self.df[col].value_counts(normalize=True)
+            rare_categories = value_counts[value_counts < min_frequency]
+
+            if len(rare_categories) == len(value_counts):
+                # All categories are rare
+                logger.debug(f"Skipping '{col}' - all categories below {min_frequency} frequency")
+                continue
+
+            # Add to encoding list
+            columns_to_encode.append(col)
+            logger.debug(f"Detected categorical column '{col}': {unique_count} categories, "
+                        f"type={self.df[col].dtype}")
+
+        if len(columns_to_encode) == 0:
+            logger.info("No categorical columns detected for encoding")
+            return self
+
+        logger.info(f"Auto-detected {len(columns_to_encode)} categorical columns: {columns_to_encode}")
+
+        # Apply one-hot encoding
+        self.one_hot_encode(
+            columns=columns_to_encode,
+            drop_first=drop_first,
+            drop_original=drop_original
+        )
+
+        return self
+
     # ========================================
     # FUZZY MATCHING
     # ========================================

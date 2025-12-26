@@ -156,6 +156,60 @@ profiler.plot_scatter_matrix(
 - Trend lines on scatter plots
 - Choice of histogram or KDE on diagonal
 
+### 5. 🤖 Machine Learning Features
+**Intelligent feature analysis and preprocessing for ML workflows.**
+
+New methods to streamline ML preprocessing and feature engineering:
+
+**Target Correlation Analysis:**
+```python
+from schema_mapper.profiler import Profiler
+
+profiler = Profiler(df, name='customer_churn')
+
+# Analyze feature importance for classification
+corr_df = profiler.analyze_target_correlation('churn', top_n=10)
+print(corr_df)
+#          feature  correlation  abs_correlation
+# 0  tenure_months       -0.352            0.352
+# 1 monthly_charges        0.298            0.298
+
+# Visualize feature importance
+fig = profiler.plot_target_correlation('churn', top_n=15)
+fig.savefig('feature_importance.png', dpi=300, bbox_inches='tight')
+```
+
+**Auto-Detect Categorical Encoding:**
+```python
+from schema_mapper.preprocessor import PreProcessor
+
+preprocessor = PreProcessor(df)
+
+# Automatically detect and encode categorical columns
+preprocessor.auto_encode_categorical(
+    exclude_columns=['target', 'id'],  # Don't encode these
+    max_categories=10,                  # Max unique values to encode
+    drop_first=False                    # Keep all categories
+)
+
+# Dataset is now ML-ready with one-hot encoded features
+print(f"Original columns: {original_cols}")
+print(f"After encoding: {preprocessor.df.shape[1]} columns")
+```
+
+**What Changed:**
+- **Profiler.analyze_target_correlation()**: Compute correlations against target
+  - Automatic categorical-to-binary conversion for classification
+  - Multi-class label encoding support
+  - Sorted by correlation strength for feature selection
+- **Profiler.plot_target_correlation()**: Visualize feature importance
+  - Horizontal bar chart with positive (green) / negative (red) coloring
+  - Automatic labeling and formatting
+- **PreProcessor.auto_encode_categorical()**: Smart categorical encoding
+  - Auto-detects categorical columns by type and cardinality
+  - Configurable thresholds for encoding decisions
+  - Excludes target and ID columns
+
 ---
 
 ## 💡 Why This Release Matters
@@ -223,6 +277,7 @@ for dataset in source_tree['datasets']:
 - Enhanced BigQuery documentation (dataset.table format requirement)
 - Comprehensive warehouse structure comparison guide
 - Enhanced visualization methods with customizable colors and scatter plot matrix
+- ML-focused features: target correlation analysis and auto-encoding
 
 **Platform Support:**
 - ✅ Google BigQuery

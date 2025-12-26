@@ -751,3 +751,114 @@ class DataVisualizer:
             pairplot.fig.set_size_inches(figsize)
 
         return pairplot
+
+    @staticmethod
+    def plot_target_correlation(
+        corr_df: pd.DataFrame,
+        title: str = 'Feature Correlation with Target',
+        figsize: Tuple[int, int] = (10, 8),
+        color_positive: str = '#27ae60',  # Green
+        color_negative: str = '#e74c3c',  # Red
+        top_n: Optional[int] = None
+    ):
+        """
+        Plot horizontal bar chart of feature correlations with target variable.
+
+        Creates a horizontal bar chart showing feature correlations, with positive
+        correlations in green and negative correlations in red. Automatically sorts
+        by absolute correlation strength.
+
+        Args:
+            corr_df: DataFrame with columns ['feature', 'correlation', 'abs_correlation']
+                     from Profiler.analyze_target_correlation()
+            title: Plot title (default: 'Feature Correlation with Target')
+            figsize: Figure size tuple (default: (10, 8))
+            color_positive: Color for positive correlations (default: '#27ae60' green)
+            color_negative: Color for negative correlations (default: '#e74c3c' red)
+            top_n: Show only top N features (default: all, max 30)
+
+        Returns:
+            Matplotlib figure object
+
+        Example:
+            >>> corr_df = profiler.analyze_target_correlation('price')
+            >>> fig = DataVisualizer.plot_target_correlation(
+            ...     corr_df,
+            ...     title='Feature Importance for Price Prediction',
+            ...     top_n=15
+            ... )
+            >>> fig.savefig('target_correlation.png', dpi=300, bbox_inches='tight')
+        """
+        plt, sns = _ensure_viz_dependencies()
+
+        # Validate input
+        required_cols = {'feature', 'correlation', 'abs_correlation'}
+        if not required_cols.issubset(corr_df.columns):
+            raise ValueError(f"DataFrame must contain columns: {required_cols}")
+
+        if len(corr_df) == 0:
+            logger.warning("Empty correlation DataFrame provided")
+            fig, ax = plt.subplots(figsize=figsize)
+            ax.text(0.5, 0.5, 'No correlations to display',
+                   ha='center', va='center', fontsize=14, color='gray')
+            ax.set_title(title, fontsize=14, fontweight='bold', pad=20)
+            ax.axis('off')
+            return fig
+
+        # Apply top_n limit (max 30 for readability)
+        plot_df = corr_df.copy()
+        if top_n is not None:
+            plot_df = plot_df.head(min(top_n, 30))
+        elif len(plot_df) > 30:
+            logger.warning(f"Too many features ({len(plot_df)}), showing top 30")
+            plot_df = plot_df.head(30)
+
+        # Sort by correlation for better visualization (already sorted by abs, but reverse for bottom-to-top)
+        plot_df = plot_df.iloc[::-1].reset_index(drop=True)
+
+        # Create figure
+        fig, ax = plt.subplots(figsize=figsize)
+
+        # Create colors based on sign of correlation
+        colors = [color_positive if corr >= 0 else color_negative
+                 for corr in plot_df['correlation']]
+
+        # Create horizontal bar chart
+        bars = ax.barh(range(len(plot_df)), plot_df['correlation'], color=colors, alpha=0.7)
+
+        # Customize plot
+        ax.set_yticks(range(len(plot_df)))
+        ax.set_yticklabels(plot_df['feature'], fontsize=9)
+        ax.set_xlabel('Correlation Coefficient', fontsize=11, fontweight='bold')
+        ax.set_title(title, fontsize=14, fontweight='bold', pad=20)
+
+        # Add zero line
+        ax.axvline(x=0, color='black', linestyle='-', linewidth=0.8, alpha=0.5)
+
+        # Add grid for readability
+        ax.grid(axis='x', alpha=0.3, linestyle='--')
+        ax.set_axisbelow(True)
+
+        # Add value labels on bars
+        for i, (bar, corr) in enumerate(zip(bars, plot_df['correlation'])):
+            width = bar.get_width()
+            label_x = width + (0.02 if width > 0 else -0.02)
+            ha = 'left' if width > 0 else 'right'
+            ax.text(label_x, bar.get_y() + bar.get_height()/2,
+                   f'{corr:.3f}',
+                   ha=ha, va='center', fontsize=8, fontweight='bold')
+
+        # Add legend
+        from matplotlib.patches import Patch
+        legend_elements = [
+            Patch(facecolor=color_positive, alpha=0.7, label='Positive'),
+            Patch(facecolor=color_negative, alpha=0.7, label='Negative')
+        ]
+        ax.legend(handles=legend_elements, loc='lower right', fontsize=9)
+
+        # Adjust layout
+        plt.tight_layout()
+
+        logger.info(f"Created target correlation plot with {len(plot_df)} features")
+
+        return fig

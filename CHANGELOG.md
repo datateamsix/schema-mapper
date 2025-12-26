@@ -41,6 +41,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Abstracted matplotlib complexity with sensible defaults
   - Added `Profiler.plot_distributions()` and `Profiler.plot_scatter_matrix()` wrapper methods
 
+- **Machine Learning Features**: New methods for ML preprocessing and feature analysis
+  - **Profiler.analyze_target_correlation()**: Analyze feature correlations against a target variable
+    - Automatic binary encoding for categorical targets (classification tasks)
+    - Label encoding for multi-class targets
+    - Returns sorted DataFrame by correlation strength
+    - Supports pearson, spearman, and kendall correlation methods
+  - **Profiler.plot_target_correlation()**: Visualize feature importance with horizontal bar chart
+    - Color-coded positive (green) and negative (red) correlations
+    - Automatic target encoding for categorical variables
+    - Configurable top-N features display
+  - **PreProcessor.auto_encode_categorical()**: Intelligent categorical encoding
+    - Auto-detects categorical columns based on data type and cardinality
+    - Configurable thresholds for max categories and minimum frequency
+    - Excludes specified columns (e.g., target, ID columns)
+    - One-hot encoding with optional multicollinearity handling
+
 ### Use Cases Enabled
 - Query databases and immediately get DataFrames for analysis
 - Export complete warehouse inventories with metadata

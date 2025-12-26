@@ -609,6 +609,151 @@ class Profiler:
 
         return pd.DataFrame(correlations)
 
+    def analyze_target_correlation(
+        self,
+        target_column: str,
+        method: str = 'pearson',
+        top_n: Optional[int] = None
+    ) -> pd.DataFrame:
+        """
+        Analyze feature correlations against a target column for ML workflows.
+
+        Automatically handles categorical targets by converting them to binary (0/1)
+        for classification tasks. Returns correlations sorted by absolute value to
+        identify the most important features.
+
+        Args:
+            target_column: Name of the target column
+            method: Correlation method ('pearson', 'spearman', 'kendall')
+            top_n: Return only top N correlations (default: all)
+
+        Returns:
+            DataFrame with columns ['feature', 'correlation', 'abs_correlation']
+            sorted by absolute correlation strength
+
+        Raises:
+            ValueError: If target column doesn't exist or has insufficient data
+
+        Example:
+            >>> # Numeric target (regression)
+            >>> corr = profiler.analyze_target_correlation('price')
+            >>> print(corr.head())
+            #     feature  correlation  abs_correlation
+            # 0  bedrooms        0.523            0.523
+            # 1   sqft            0.489            0.489
+            # 2   age            -0.334            0.334
+            >>>
+            >>> # Categorical target (classification)
+            >>> corr = profiler.analyze_target_correlation('churn')
+            >>> print(f"Target converted to binary: {corr['target_encoding']}")
+            >>> print(corr.head())
+            #          feature  correlation  abs_correlation
+            # 0  tenure             -0.352            0.352
+            # 1  monthly_charges     0.298            0.298
+        """
+        logger.info(f"Analyzing feature correlations against target: {target_column}")
+
+        # Validate target column exists
+        if target_column not in self.df.columns:
+            raise ValueError(f"Target column '{target_column}' not found in DataFrame")
+
+        # Get target series
+        target = self.df[target_column].copy()
+
+        # Remove rows where target is null
+        valid_mask = target.notna()
+        target = target[valid_mask]
+        df_clean = self.df[valid_mask].copy()
+
+        if len(target) == 0:
+            raise ValueError(f"Target column '{target_column}' has no non-null values")
+
+        # Convert categorical target to binary for classification
+        target_encoded = target
+        encoding_info = None
+
+        if not pd.api.types.is_numeric_dtype(target):
+            logger.info(f"Target '{target_column}' is categorical, converting to binary encoding...")
+
+            unique_values = target.unique()
+            n_unique = len(unique_values)
+
+            if n_unique == 2:
+                # Binary classification - map to 0/1
+                encoding_map = {unique_values[0]: 0, unique_values[1]: 1}
+                target_encoded = target.map(encoding_map)
+                encoding_info = {
+                    'type': 'binary_classification',
+                    'encoding': encoding_map,
+                    'n_classes': 2
+                }
+                logger.info(f"Binary encoding: {encoding_map}")
+            elif n_unique > 2:
+                # Multi-class - need to warn user or use label encoding
+                logger.warning(f"Target has {n_unique} classes. Using label encoding (0 to {n_unique-1})")
+                from sklearn.preprocessing import LabelEncoder
+                le = LabelEncoder()
+                target_encoded = pd.Series(le.fit_transform(target), index=target.index)
+                encoding_info = {
+                    'type': 'multiclass_classification',
+                    'encoding': dict(zip(le.classes_, le.transform(le.classes_))),
+                    'n_classes': n_unique
+                }
+            else:
+                raise ValueError(f"Target column '{target_column}' has only 1 unique value")
+
+        # Get all numeric columns except target
+        numeric_cols = df_clean.select_dtypes(include=[np.number]).columns.tolist()
+
+        if target_column in numeric_cols and encoding_info is None:
+            numeric_cols.remove(target_column)
+
+        if len(numeric_cols) == 0:
+            logger.warning("No numeric feature columns found for correlation analysis")
+            return pd.DataFrame(columns=['feature', 'correlation', 'abs_correlation'])
+
+        # Calculate correlations
+        correlations = []
+        for col in numeric_cols:
+            feature_series = df_clean[col]
+
+            # Remove rows where feature is null
+            valid_both = feature_series.notna() & target_encoded.notna()
+
+            if valid_both.sum() < 2:
+                logger.warning(f"Skipping '{col}' - insufficient non-null values")
+                continue
+
+            corr_value = feature_series[valid_both].corr(target_encoded[valid_both], method=method)
+
+            if not np.isnan(corr_value):
+                correlations.append({
+                    'feature': col,
+                    'correlation': round(corr_value, 4),
+                    'abs_correlation': round(abs(corr_value), 4)
+                })
+
+        # Create DataFrame and sort by absolute correlation
+        corr_df = pd.DataFrame(correlations)
+
+        if len(corr_df) == 0:
+            logger.warning("No valid correlations computed")
+            return corr_df
+
+        corr_df = corr_df.sort_values('abs_correlation', ascending=False).reset_index(drop=True)
+
+        # Apply top_n filter if specified
+        if top_n is not None and top_n > 0:
+            corr_df = corr_df.head(top_n)
+
+        logger.info(f"Computed correlations for {len(corr_df)} features against target '{target_column}'")
+
+        # Store encoding info as metadata
+        if encoding_info:
+            corr_df.attrs['target_encoding'] = encoding_info
+
+        return corr_df
+
     # ========================================
     # MISSING VALUE ANALYSIS
     # ========================================
@@ -808,6 +953,76 @@ class Profiler:
             color=color,
             alpha=alpha,
             diagonal=diagonal
+        )
+
+    def plot_target_correlation(
+        self,
+        target_column: str,
+        method: str = 'pearson',
+        figsize: Tuple[int, int] = (10, 8),
+        top_n: Optional[int] = 20,
+        color_positive: str = '#27ae60',
+        color_negative: str = '#e74c3c'
+    ):
+        """
+        Plot feature correlations with target variable for ML feature importance analysis.
+
+        Automatically analyzes correlations and creates a horizontal bar chart with
+        positive correlations in green and negative in red. Handles categorical targets
+        by converting to binary encoding.
+
+        Args:
+            target_column: Name of the target column
+            method: Correlation method ('pearson', 'spearman', 'kendall')
+            figsize: Figure size tuple (default: (10, 8))
+            top_n: Number of top features to show (default: 20, max: 30)
+            color_positive: Color for positive correlations (default: '#27ae60' green)
+            color_negative: Color for negative correlations (default: '#e74c3c' red)
+
+        Returns:
+            Matplotlib figure object
+
+        Example:
+            >>> # Regression task with numeric target
+            >>> fig = profiler.plot_target_correlation('price', top_n=15)
+            >>> fig.savefig('price_feature_importance.png', dpi=300, bbox_inches='tight')
+            >>>
+            >>> # Classification task with categorical target
+            >>> fig = profiler.plot_target_correlation('churn', method='spearman')
+            >>> # Automatically converts 'churn' to binary (0/1)
+            >>>
+            >>> # Custom colors
+            >>> fig = profiler.plot_target_correlation(
+            ...     'conversion',
+            ...     top_n=10,
+            ...     color_positive='#3498db',  # Blue
+            ...     color_negative='#95a5a6'   # Grey
+            ... )
+        """
+        # Analyze correlations
+        corr_df = self.analyze_target_correlation(
+            target_column=target_column,
+            method=method,
+            top_n=top_n
+        )
+
+        # Get target encoding info if available
+        encoding_info = corr_df.attrs.get('target_encoding', None)
+        title_suffix = ''
+        if encoding_info:
+            if encoding_info['type'] == 'binary_classification':
+                title_suffix = ' (Binary Classification)'
+            elif encoding_info['type'] == 'multiclass_classification':
+                title_suffix = f" ({encoding_info['n_classes']}-Class Classification)"
+
+        # Create visualization
+        return DataVisualizer.plot_target_correlation(
+            corr_df,
+            title=f'{self.name} - Feature Correlation with {target_column}{title_suffix}',
+            figsize=figsize,
+            color_positive=color_positive,
+            color_negative=color_negative,
+            top_n=top_n
         )
 
     # ========================================
