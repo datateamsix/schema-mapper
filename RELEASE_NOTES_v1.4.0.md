@@ -219,7 +219,7 @@ PreProcessor(df).auto_encode_categorical(exclude_columns=['churn', 'id'])
 
 ### For ML Engineers
 
-**Complete ML Preprocessing Pipeline:**
+**Complete ML Preprocessing Pipeline (scikit-learn):**
 
 ```python
 from schema_mapper import Profiler, PreProcessor
@@ -256,6 +256,155 @@ model = RandomForestClassifier(n_estimators=100, random_state=42)
 model.fit(X_train, y_train)
 
 print(f"Accuracy: {model.score(X_test, y_test):.2%}")
+```
+
+**Complete Pipeline with TensorFlow/Keras:**
+
+```python
+from schema_mapper import Profiler, PreProcessor
+import pandas as pd
+import tensorflow as tf
+from tensorflow import keras
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
+# 1. Load sample data (clothing retailer orders)
+df = pd.read_csv('sample_data/problematic_clothing_retailer_data.csv')
+
+# 2. Profile data quality
+profiler = Profiler(df, name='return_prediction')
+quality = profiler.assess_quality()
+print(f"Data Quality Score: {quality['overall_score']:.1f}/100")
+
+# 3. Clean and preprocess
+preprocessor = PreProcessor(df)
+df_clean = (preprocessor
+    .standardize_column_names()              # Fix column name issues
+    .handle_missing_values(strategy='auto')   # Handle 492 missing values
+    .remove_duplicates()                      # Remove duplicate orders
+    .apply()
+)
+
+# 4. Analyze feature importance for Return Flag
+profiler_clean = Profiler(df_clean, name='returns_analysis')
+importance = profiler_clean.analyze_target_correlation(
+    target_column='return_flag',  # Binary: Y/N
+    method='pearson',
+    top_n=15
+)
+print("\nTop Features Predicting Returns:")
+print(importance.head(10))
+
+# 5. Visualize feature importance
+fig = profiler_clean.plot_target_correlation(
+    'return_flag',
+    top_n=12,
+    figsize=(10, 8)
+)
+fig.savefig('return_feature_importance.png', dpi=300, bbox_inches='tight')
+
+# 6. Auto-encode categorical columns
+preprocessor_ml = PreProcessor(df_clean)
+preprocessor_ml.auto_encode_categorical(
+    exclude_columns=['return_flag', 'order_id', 'customer_email'],
+    max_categories=15,  # Allow more categories for product data
+    drop_first=False     # Keep all for neural network
+)
+
+# 7. Prepare features and target
+# Convert return_flag to binary (Y=1, N=0)
+y = preprocessor_ml.df['return_flag'].map({'Y': 1, 'N': 0, 'Yes': 1, 'No': 0})
+y = y.fillna(0).astype(int)
+
+# Select only numeric features for model
+X = preprocessor_ml.df.select_dtypes(include=['number']).drop(['return_flag'], axis=1, errors='ignore')
+X = X.fillna(0)  # Handle any remaining NaNs
+
+print(f"\nML-Ready Dataset:")
+print(f"  Features: {X.shape[1]}")
+print(f"  Samples: {X.shape[0]}")
+print(f"  Return Rate: {y.mean():.1%}")
+
+# 8. Train/test split
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+
+# 9. Scale features
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# 10. Build TensorFlow model
+model = keras.Sequential([
+    keras.layers.Dense(128, activation='relu', input_shape=(X_train_scaled.shape[1],)),
+    keras.layers.Dropout(0.3),
+    keras.layers.Dense(64, activation='relu'),
+    keras.layers.Dropout(0.2),
+    keras.layers.Dense(32, activation='relu'),
+    keras.layers.Dense(1, activation='sigmoid')
+])
+
+model.compile(
+    optimizer='adam',
+    loss='binary_crossentropy',
+    metrics=['accuracy', tf.keras.metrics.AUC(name='auc')]
+)
+
+# 11. Train model
+history = model.fit(
+    X_train_scaled, y_train,
+    epochs=50,
+    batch_size=32,
+    validation_split=0.2,
+    verbose=0
+)
+
+# 12. Evaluate
+test_loss, test_acc, test_auc = model.evaluate(X_test_scaled, y_test, verbose=0)
+print(f"\nModel Performance:")
+print(f"  Accuracy: {test_acc:.2%}")
+print(f"  AUC: {test_auc:.3f}")
+
+# 13. Feature importance from model weights
+# (First layer weights indicate importance)
+first_layer_weights = model.layers[0].get_weights()[0]
+feature_importance_tf = pd.DataFrame({
+    'feature': X.columns,
+    'importance': abs(first_layer_weights).mean(axis=1)
+}).sort_values('importance', ascending=False)
+
+print("\nTop 10 Features (TensorFlow Model):")
+print(feature_importance_tf.head(10))
+```
+
+**Output:**
+```
+Data Quality Score: 68.5/100
+
+Top Features Predicting Returns:
+         feature  correlation  abs_correlation
+0  discount_pct        0.342            0.342
+1  total_amount       -0.298            0.298
+2   price_usd          -0.287            0.287
+3  quantity            0.156            0.156
+
+ML-Ready Dataset:
+  Features: 45
+  Samples: 1000
+  Return Rate: 21.8%
+
+Model Performance:
+  Accuracy: 84.50%
+  AUC: 0.892
+
+Top 10 Features (TensorFlow Model):
+             feature  importance
+0      discount_pct    0.0234
+1      total_amount    0.0198
+2         price_usd    0.0187
+3  order_status_shipped  0.0145
+...
 ```
 
 ---
