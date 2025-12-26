@@ -34,6 +34,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BigQuery Documentation**: Added prominent notes about `dataset.table` format requirement in class docstrings and query examples
 - **Error Handling**: All new introspection methods include comprehensive error handling with platform-specific ExecutionError exceptions
 - **Logging**: Enhanced logging for all introspection operations with row/table counts
+- **Visualization Methods**: Enhanced profiler visualization capabilities with customizable styling
+  - Updated `plot_histogram()` with color parameters (default: dark blue-grey #34495e, KDE: red #e74c3c)
+  - New `plot_scatter_matrix()` method for pairwise relationship visualization with trend lines
+  - Automatic axis and title labeling for all plots
+  - Abstracted matplotlib complexity with sensible defaults
+  - Added `Profiler.plot_distributions()` and `Profiler.plot_scatter_matrix()` wrapper methods
 
 ### Use Cases Enabled
 - Query databases and immediately get DataFrames for analysis

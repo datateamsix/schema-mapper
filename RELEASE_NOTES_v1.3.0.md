@@ -123,6 +123,39 @@ Added `docs/WAREHOUSE_STRUCTURE_COMPARISON.md`:
 - **Query Syntax Reference**: How to reference tables on each platform
 - **Complete API Coverage**: All available methods across platforms
 
+### 4. 🎨 Enhanced Visualization Capabilities
+**Customizable plotting with sensible defaults for data profiling.**
+
+Enhanced the profiler's visualization methods:
+```python
+from schema_mapper.profiler import Profiler
+
+profiler = Profiler(df, name='sales_data')
+
+# Plot histograms with custom colors
+profiler.plot_distributions(
+    columns=['revenue', 'quantity', 'price'],
+    color='#34495e',      # Dark blue-grey (default)
+    kde_color='#e74c3c'   # Red for KDE overlay
+)
+
+# Create scatter plot matrix for relationships
+profiler.plot_scatter_matrix(
+    columns=['revenue', 'quantity', 'price', 'discount'],
+    color='#34495e',       # Customize point color
+    alpha=0.6,             # Control transparency
+    diagonal='hist'        # 'hist' or 'kde' on diagonal
+)
+```
+
+**What Changed:**
+- Customizable color parameters with elegant defaults (dark blue-grey #34495e)
+- New `plot_scatter_matrix()` for pairwise relationship analysis
+- Automatic axis and title labeling
+- Abstracted matplotlib complexity
+- Trend lines on scatter plots
+- Choice of histogram or KDE on diagonal
+
 ---
 
 ## 💡 Why This Release Matters
@@ -189,6 +222,7 @@ for dataset in source_tree['datasets']:
 - `get_database_tree()` / `get_project_tree()` methods with dict/DataFrame outputs
 - Enhanced BigQuery documentation (dataset.table format requirement)
 - Comprehensive warehouse structure comparison guide
+- Enhanced visualization methods with customizable colors and scatter plot matrix
 
 **Platform Support:**
 - ✅ Google BigQuery
