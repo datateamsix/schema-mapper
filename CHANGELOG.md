@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2025-01-XX
+
+### Added
+- **DataFrame Query Results**: All platform connectors now return pandas DataFrames from `execute_query()` instead of native database objects (RowIterator, cursors)
+  - Automatic conversion for consistent API across all platforms
+  - BigQuery: RowIterator → DataFrame via `.to_dataframe()`
+  - SQL-based platforms: Cursor → DataFrame via `fetchall()` + column names
+  - Improved error handling with ExecutionError exceptions
+  - Debug logging for row counts
+
+- **Enhanced Introspection Methods**:
+  - `get_tables()`: Returns detailed table metadata as DataFrame (table_name, table_type, size_mb, num_rows, created, modified, description)
+  - `get_schemas()` / `get_datasets()`: Lists all schemas/datasets with metadata (owner, created, location)
+  - `get_database_tree()` / `get_project_tree()`: Returns hierarchical database structure in dict or DataFrame format
+  - Support for both 'dict' (JSON-serializable) and 'dataframe' (flat table) output formats
+  - Table count tracking and detailed metadata for data discovery workflows
+
+- **Warehouse Structure Documentation**:
+  - New `WAREHOUSE_STRUCTURE_COMPARISON.md` in docs/
+  - Side-by-side comparison of all 5 platform hierarchies (Project/Database/Schema levels)
+  - Terminology mapping for cross-platform migrations
+  - Query syntax reference for each platform
+  - Migration considerations and best practices
+  - Complete API coverage matrix
+
+### Enhanced
+- **BigQuery Documentation**: Added prominent notes about `dataset.table` format requirement in class docstrings and query examples
+- **Error Handling**: All new introspection methods include comprehensive error handling with platform-specific ExecutionError exceptions
+- **Logging**: Enhanced logging for all introspection operations with row/table counts
+
+### Use Cases Enabled
+- Query databases and immediately get DataFrames for analysis
+- Export complete warehouse inventories with metadata
+- Discover database structure programmatically
+- Plan cross-platform migrations with structure comparison
+- Filter and analyze table metadata (find large tables, views, etc.)
+
 ## [1.1.0] - 2024-12-20
 
 ### Added
