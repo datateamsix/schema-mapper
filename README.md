@@ -71,13 +71,16 @@ with ConnectionFactory.get_connection('bigquery', config) as conn:
 
 ## 🚀 Key Features
 
-### 🔌 **Unified Connection Layer** (NEW!)
+> **🆕 NEW in v1.3.0:** DataFrame-first API! All queries now return pandas DataFrames, plus powerful new introspection methods (`get_tables()`, `get_schemas()`, `get_database_tree()`) for discovering and exploring your data warehouse. [See examples →](#enhanced-database-discovery-new-in-v130)
+
+### 🔌 **Unified Connection Layer**
 - **Single API** for all 5 database platforms
+- **DataFrame-first queries** - All `execute_query()` calls return pandas DataFrames
+- **Enhanced introspection** - Discover tables, schemas, and complete warehouse structure
 - **Connection pooling** with thread-safe management
 - **Automatic retry logic** with exponential backoff
 - **Configuration-driven** with YAML + .env support
 - **Transaction support** across platforms
-- **Introspection** - Read existing schemas from any database
 
 ### 🎨 **Canonical Schema Architecture**
 - **Platform-agnostic** schema representation
@@ -326,6 +329,52 @@ with ConnectionFactory.get_connection('bigquery', config) as conn:
         # Auto-commit on success, rollback on error
 ```
 
+### Enhanced Database Discovery (NEW in v1.3.0!)
+
+All `execute_query()` methods now return **pandas DataFrames** for immediate analysis:
+
+```python
+# Query returns DataFrame automatically
+df = conn.execute_query("SELECT * FROM analytics.users LIMIT 100")
+print(df.head())
+df.to_csv('users.csv')  # Export directly
+filtered = df[df['age'] > 25]  # Filter with pandas
+
+# Get detailed table metadata
+tables = conn.get_tables(schema_name='analytics')
+# Returns DataFrame with: table_name, table_type, size_mb, num_rows, created, etc.
+
+# Find large tables
+large_tables = tables[tables['size_mb'] > 1000]
+
+# List all schemas/datasets
+schemas = conn.get_schemas()  # Snowflake, Redshift, PostgreSQL, SQL Server
+datasets = conn.get_datasets()  # BigQuery
+
+# Get complete warehouse structure
+tree = conn.get_database_tree(format='dict')  # JSON-serializable
+tree_df = conn.get_database_tree(format='dataframe')  # Flat table
+
+# Export warehouse inventory
+import json
+with open('warehouse_structure.json', 'w') as f:
+    json.dump(tree, f, indent=2)
+```
+
+**Use Case: Multi-Platform Inventory**
+```python
+platforms = ['bigquery', 'snowflake', 'redshift']
+for platform in platforms:
+    conn = ConnectionFactory.get_connection(platform, config)
+    conn.connect()
+
+    # Same API works everywhere
+    tree = conn.get_database_tree(format='dataframe')
+    tree.to_csv(f'{platform}_inventory.csv')
+
+    conn.disconnect()
+```
+
 ### Connection Features
 
 | Feature | BigQuery | Snowflake | PostgreSQL | Redshift | SQL Server |
@@ -334,8 +383,12 @@ with ConnectionFactory.get_connection('bigquery', config) as conn:
 | **Auto Retry** | ✓ | ✓ | ✓ | ✓ | ✓ |
 | **Transactions** | ○ Auto-commit | ✓ Full | ✓ Full | ✓ Full | ✓ Full |
 | **Savepoints** | ✗ | ✓ | ✓ | ✓ | ✓ |
-| **Introspection** | ✓ API | ✓ INFORMATION_SCHEMA | ✓ pg_catalog | ✓ INFORMATION_SCHEMA | ✓ INFORMATION_SCHEMA |
 | **Context Manager** | ✓ | ✓ | ✓ | ✓ | ✓ |
+| **DataFrame Queries** | ✓ | ✓ | ✓ | ✓ | ✓ |
+| **get_tables()** | ✓ | ✓ | ✓ | ✓ | ✓ |
+| **get_schemas()** | ✓ datasets | ✓ | ✓ | ✓ | ✓ |
+| **get_database_tree()** | ✓ project | ✓ | ✓ | ✓ | ✓ |
+| **Introspection** | ✓ API | ✓ INFORMATION_SCHEMA | ✓ pg_catalog | ✓ INFORMATION_SCHEMA | ✓ INFORMATION_SCHEMA |
 
 ---
 
